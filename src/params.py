@@ -23,7 +23,7 @@ lr0 = 0.01
 min_lr = 1e-5
 lr_fac = 0.5
 N_epochs_max = 500
-N_batch = 6000
+N_batch = 20000
 
 # unit rescalings
 x_mu = torch.tensor([-8.0, 0, 0, 0, 0])
