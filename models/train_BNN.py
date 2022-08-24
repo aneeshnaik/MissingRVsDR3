@@ -144,6 +144,9 @@ if __name__ == "__main__":
     df = pd.read_hdf(datafile)
     print(">>>Done.\n", flush=True)
 
+    # TAKE SUBSET --- REMOVE THIS LATER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    df = df.sample(n=500000)
+
     # construct covariance matrix
     print("Constructing covariance matrices:", flush=True)
     obs, cov = get_obs_cov(df)

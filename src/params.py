@@ -14,8 +14,8 @@ PARALLAXFRACERRCUT = 0.25  # parallax_err / |parallax| < 0.25
 PMERRCUT = 0.07            # mu_err < 0.07 mas/yr
 
 # BNN hyperparameters
-N_hidden = 2     # no. hidden layers
-N_units = 16     # no. units per hidden layer
+N_hidden = 4     # no. hidden layers
+N_units = 64     # no. units per hidden layer
 N_samples = 250  # no. samples
 
 # training params
@@ -23,7 +23,7 @@ lr0 = 0.01
 min_lr = 1e-5
 lr_fac = 0.5
 N_epochs_max = 500
-N_batch = 20000
+N_batch = 10000
 
 # unit rescalings
 x_mu = torch.tensor([-8.0, 0, 0, 0, 0])
