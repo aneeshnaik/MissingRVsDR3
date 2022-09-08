@@ -1,3 +1,3 @@
-SELECT g.source_id, g.phot_g_mean_mag, g.rv_template_teff, g.radial_velocity, g.radial_velocity_error, g.parallax, g.ra, g.dec, g.pmra, g.pmdec, g.parallax_error, g.ra_parallax_corr, g.dec_parallax_corr, g.parallax_pmra_corr, g.parallax_pmdec_corr, g.ra_error, g.ra_dec_corr, g.ra_pmra_corr, g.ra_pmdec_corr, g.dec_error, g.dec_pmra_corr, g.dec_pmdec_corr, g.pmra_error, g.pmra_pmdec_corr, g.pmdec_error
-FROM gaiadr3.gaia_source AS g
-WHERE g.radial_velocity IS NOT NULL
+SELECT source_id, phot_g_mean_mag, nu_eff_used_in_astrometry, pseudocolour, ecl_lat, astrometric_params_solved, rv_template_teff, radial_velocity, radial_velocity_error, parallax, parallax_error, ra, dec, pmra, pmdec, ra_error, ra_dec_corr, ra_pmra_corr, ra_pmdec_corr, dec_error, dec_pmra_corr, dec_pmdec_corr, pmra_error, pmra_pmdec_corr, pmdec_error
+FROM gaiadr3.gaia_source
+WHERE (radial_velocity IS NOT NULL) AND (parallax IS NOT NULL)

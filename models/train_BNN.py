@@ -32,39 +32,34 @@ def get_obs_cov(df):
 
     # obs array
     obs = np.stack(
-        [df['parallax'], df['ra'], df['dec'],
+        [df['ra'], df['dec'],
          df['pmra'], df['pmdec'], df['v_los']],
         axis=-1
     )
 
     # standard deviations
-    s0 = (df['parallax_err']).to_numpy()
-    s1 = (df['ra_err']).to_numpy()
-    s2 = (df['dec_err']).to_numpy()
-    s3 = (df['pmra_err']).to_numpy()
-    s4 = (df['pmdec_err']).to_numpy()
-    s5 = (df['v_los_err']).to_numpy()
-    s_list = [s0, s1, s2, s3, s4, s5]
+    s0 = (df['ra_err']).to_numpy()
+    s1 = (df['dec_err']).to_numpy()
+    s2 = (df['pmra_err']).to_numpy()
+    s3 = (df['pmdec_err']).to_numpy()
+    s4 = (df['v_los_err']).to_numpy()
+    s_list = [s0, s1, s2, s3, s4]
 
     # construct correlation matrix
-    r = np.zeros((N, 6, 6))
-    for i in range(6):
+    r = np.zeros((N, 5, 5))
+    for i in range(5):
         r[:, i, i] = 1
-    r[:, 0, 1] = r[:, 1, 0] = (df['ra_parallax_corr']).to_numpy()
-    r[:, 0, 2] = r[:, 2, 0] = (df['dec_parallax_corr']).to_numpy()
-    r[:, 0, 3] = r[:, 3, 0] = (df['parallax_pmra_corr']).to_numpy()
-    r[:, 0, 4] = r[:, 4, 0] = (df['parallax_pmdec_corr']).to_numpy()
-    r[:, 1, 2] = r[:, 2, 1] = (df['ra_dec_corr']).to_numpy()
-    r[:, 1, 3] = r[:, 3, 1] = (df['ra_pmra_corr']).to_numpy()
-    r[:, 1, 4] = r[:, 4, 1] = (df['ra_pmdec_corr']).to_numpy()
-    r[:, 2, 3] = r[:, 3, 2] = (df['dec_pmra_corr']).to_numpy()
-    r[:, 2, 4] = r[:, 4, 2] = (df['dec_pmdec_corr']).to_numpy()
-    r[:, 3, 4] = r[:, 4, 3] = (df['pmra_pmdec_corr']).to_numpy()
+    r[:, 0, 1] = r[:, 1, 0] = (df['ra_dec_corr']).to_numpy()
+    r[:, 0, 2] = r[:, 2, 0] = (df['ra_pmra_corr']).to_numpy()
+    r[:, 0, 3] = r[:, 3, 0] = (df['ra_pmdec_corr']).to_numpy()
+    r[:, 1, 2] = r[:, 2, 1] = (df['dec_pmra_corr']).to_numpy()
+    r[:, 1, 3] = r[:, 3, 1] = (df['dec_pmdec_corr']).to_numpy()
+    r[:, 2, 3] = r[:, 3, 2] = (df['pmra_pmdec_corr']).to_numpy()
 
     # covariance matrix
     cov = np.zeros_like(r)
-    for i in range(6):
-        for j in range(6):
+    for i in range(5):
+        for j in range(5):
             si = s_list[i]
             sj = s_list[j]
             cov[:, i, j] = r[:, i, j] * si * sj
@@ -72,13 +67,17 @@ def get_obs_cov(df):
     return obs, cov
 
 
-def get_loader(obs, cov, rng, N_batch, x_mu, x_sig, y_mu, y_sig):
+def get_loader(d_matrix, obs, cov, rng, N_batch, x_mu, x_sig, y_mu, y_sig):
 
-    # batch sample from covariance matrix
-    q = sample(means=obs, covs=cov, rng=rng)
+    # sample distance from distance matrix
+    N = len(d_matrix)
+    q = d_matrix[np.arange(N), rng.integers(low=0, high=10, size=N)]
+
+    # sample ra/dec/pmra/pmdec/v_los from covariance matrix, stack with d
+    q = np.hstack((q[:, None], sample(means=obs, covs=cov, rng=rng)))
 
     # convert ra/dec/d to X/Y/Z (note d = 1/parallax)
-    X, Y, Z = convert_pos(q[:, 1], q[:, 2], 1 / q[:, 0]).T
+    X, Y, Z = convert_pos(q[:, 1], q[:, 2], q[:, 0]).T
 
     # create torch tensors
     x = torch.tensor(np.stack([X, Y, Z, q[:, 3], q[:, 4]], axis=-1)).double()
@@ -141,11 +140,14 @@ if __name__ == "__main__":
 
     # load datasets
     print("Loading data:", flush=True)
-    df = pd.read_hdf(datafile)
+    #df = pd.read_hdf(datafile)
+    df = pd.read_hdf(datafile, stop=5000000)
     print(">>>Done.\n", flush=True)
 
-    # TAKE SUBSET --- REMOVE THIS LATER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    df = df.sample(n=500000)
+    # construct distance matrix
+    print("Constructing distance matrix:", flush=True)
+    d_matrix = np.array([df[f'd{i}'] for i in range(10)]).T
+    print(">>>Done.\n", flush=True)
 
     # construct covariance matrix
     print("Constructing covariance matrices:", flush=True)
@@ -183,7 +185,7 @@ if __name__ == "__main__":
         t0 = time()
 
         # get loaders
-        loader = get_loader(obs, cov, **largs)
+        loader = get_loader(d_matrix, obs, cov, **largs)
 
         # train
         model.train()

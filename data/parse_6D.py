@@ -27,69 +27,65 @@ if __name__ == '__main__':
 
     # columns to read
     cols = [
+        'source_id',
         'radial_velocity', 'radial_velocity_error',
-        'parallax',
-        'ra',
-        'dec',
-        'pmra',
-        'pmdec',
-        'parallax_error',
-        'ra_parallax_corr',
-        'dec_parallax_corr',
-        'parallax_pmra_corr',
-        'parallax_pmdec_corr',
-        'ra_error',
-        'ra_dec_corr',
-        'ra_pmra_corr',
-        'ra_pmdec_corr',
-        'dec_error',
-        'dec_pmra_corr',
-        'dec_pmdec_corr',
-        'pmra_error',
-        'pmra_pmdec_corr',
+        'ra', 'dec', 'pmra', 'pmdec',
+        'ra_error', 'ra_dec_corr', 'ra_pmra_corr', 'ra_pmdec_corr',
+        'dec_error', 'dec_pmra_corr', 'dec_pmdec_corr',
+        'pmra_error', 'pmra_pmdec_corr',
         'pmdec_error'
     ]
 
-    # read file
-    print(">>>Loading data")
+    # read DR3 file
+    print(">>> Loading DR3 data")
     df = pd.read_csv(ddir + 'DR3_6D.csv', usecols=cols)
 
-    # lose 2D stars GET RID OF THIS ONCE QUERY HAS CHANGED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    print(">>>Removing 2+1D stars")
-    df = df.dropna()
+    # load Rybizki flags
+    print(">>> Loading astrometric fidelities")
+    df1 = pd.read_csv(ddir + 'rybizki_flags.csv')
 
-    # lose -ve parallaxes GET RID OF THIS ONCE QUALITY FLAG INTRODUCED!!!!!!!!!!
-    df = df[df['parallax'] > 0]
+    # merge
+    print(">>> Merging fidelities")
+    df = df.merge(df1, on='source_id')
+
+    # read distances
+    print(">>> Reading distances")
+    d = np.load(ddir + 'distance_samples.npy')
+
+    # add distances as columns
+    print(">>> Appending distances to DataFrame")
+    N_samples = d.shape[1]
+    for i in range(N_samples):
+        df[f'd{i}'] = d[:, i]
 
     # rename some columns
-    print(">>>Renaming columns")
+    print(">>> Renaming columns")
     df = df.rename(columns={"radial_velocity": "v_los",
                             "radial_velocity_error": "v_los_err",
-                            "parallax_error": "parallax_err",
                             "ra_error": "ra_err",
                             "dec_error": "dec_err",
                             "pmra_error": "pmra_err",
                             "pmdec_error": "pmdec_err"})
 
     # shuffle
-    print(">>>Shuffling DF")
+    print(">>> Shuffling DF")
     df = df.sample(frac=1, random_state=rng).reset_index(drop=True)
 
     # train/test split
-    print(">>>Performing train/test split")
-    df_tr, df_te = u.train_test_split(df, 0.9, rng=rng)
+    print(">>> Performing train/test split")
+    df_tr, df_te = u.train_test_split(df, 0.8, rng=rng)
 
     # quality cuts (on training set only)
-    print(">>>Quality cuts")
-    f = df_tr['parallax_err'] / df_tr['parallax']
-    m = ((f < p.PARALLAXFRACERRCUT)
+    print(f">>> Quality cuts... pre-cut size {len(df_tr)}")
+    m = ((df_tr['fidelity'] > 0.5)
          & (df_tr['v_los_err'] < p.VLOSERRCUT)
          & (df_tr['pmdec_err'] < p.PMERRCUT)
          & (df_tr['pmra_err'] < p.PMERRCUT))
     df_tr = df_tr[m]
+    print(f">>> Quality cuts... post-cut size {len(df_tr)}")
 
     # save
-    print(">>>Saving")
+    print(">>> Saving")
     df_tr.to_hdf(f"{ddir}train.hdf5", "train", index=False, mode='w')
     df_te.to_hdf(f"{ddir}test.hdf5", "test", index=False, mode='w')
-    print(">>>Done.")
+    print(">>> Done.")
