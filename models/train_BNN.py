@@ -140,8 +140,7 @@ if __name__ == "__main__":
 
     # load datasets
     print("Loading data:", flush=True)
-    #df = pd.read_hdf(datafile)
-    df = pd.read_hdf(datafile, stop=5000000)
+    df = pd.read_hdf(datafile)
     print(">>>Done.\n", flush=True)
 
     # construct distance matrix
