@@ -142,7 +142,7 @@ if __name__ == "__main__":
     print("Loading data:", flush=True)
     df = pd.read_hdf(datafile)
     print(">>>Done.\n", flush=True)
-    
+
     # construct distance matrix
     print("Constructing distance matrix:", flush=True)
     d_matrix = np.array([df[f'd{i}'] for i in range(10)]).T
