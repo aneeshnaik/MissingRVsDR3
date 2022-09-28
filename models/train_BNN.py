@@ -172,7 +172,8 @@ if __name__ == "__main__":
 
     # set up other training objects
     optim = Adam(model.parameters(), lr=p.lr0)
-    scheduler = ReduceLR(optim, factor=p.lr_fac, min_lr=p.min_lr)
+    scheduler = ReduceLR(optim, factor=p.lr_fac, min_lr=p.min_lr,
+                         threshold=p.threshold, cooldown=p.cooldown)
 
     # training loop
     print("Commencing training:", flush=True)

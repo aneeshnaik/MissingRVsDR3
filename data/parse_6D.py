@@ -75,12 +75,19 @@ if __name__ == '__main__':
     print(">>> Performing train/test split")
     df_tr, df_te = u.train_test_split(df, 0.8, rng=rng)
 
+    # construct distance matrix from training set
+    print(">>> Constructing distance matrix")
+    d_matrix = np.array([df_tr[f'd{i}'] for i in range(10)]).T
+    mu_d = np.mean(d_matrix, axis=-1)
+    sig_d = np.std(d_matrix, axis=-1)
+
     # quality cuts (on training set only)
     print(f">>> Quality cuts... pre-cut size {len(df_tr)}")
     m = ((df_tr['fidelity'] > 0.5)
          & (df_tr['v_los_err'] < p.VLOSERRCUT)
          & (df_tr['pmdec_err'] < p.PMERRCUT)
-         & (df_tr['pmra_err'] < p.PMERRCUT))
+         & (df_tr['pmra_err'] < p.PMERRCUT)
+         & (sig_d / mu_d < p.DERRCUT))
     df_tr = df_tr[m]
     print(f">>> Quality cuts... post-cut size {len(df_tr)}")
 

@@ -11,6 +11,7 @@ import torch
 # quality cuts on training dataset
 VLOSERRCUT = 8.5           # v_los_err < 8.5 km/s
 PMERRCUT = 0.07            # mu_err < 0.07 mas/yr
+DERRCUT = 0.05             # sig_d / mu_d < 0.05
 
 # BNN hyperparameters
 N_hidden = 8     # no. hidden layers
@@ -21,6 +22,8 @@ N_samples = 250  # no. samples
 lr0 = 1e-3
 min_lr = 1e-5
 lr_fac = 0.5
+cooldown = 5
+threshold = 1e-5
 N_epochs_max = 500
 N_batch = 6000
 
