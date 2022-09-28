@@ -18,7 +18,7 @@ N_units = 64     # no. units per hidden layer
 N_samples = 250  # no. samples
 
 # training params
-lr0 = 0.01
+lr0 = 1e-3
 min_lr = 1e-5
 lr_fac = 0.5
 N_epochs_max = 500
