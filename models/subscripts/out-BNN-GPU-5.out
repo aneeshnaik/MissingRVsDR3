@@ -1,0 +1,62 @@
+
+The following have been reloaded with a version change:
+  1) GCC/6.3.0-2.27 => GCC/10.2.0
+  2) GCCcore/6.3.0 => GCCcore/10.2.0
+  3) binutils/2.27-GCCcore-6.3.0 => binutils/2.35-GCCcore-10.2.0
+
+
+
+%%%%%%%%%%%%%%%%
+Training a BNN with random seed 5.
+%%%%%%%%%%%%%%%%
+
+Found data directory: /home/ppzapn/Data/MissingRVsDR3Data/
+
+Specified parameters:
+N_hidden = 8
+N_units = 64
+N_samples = 250
+N_batch = 6000
+Training data file: /home/ppzapn/Data/MissingRVsDR3Data/train.hdf5
+x_mu = tensor([-8.,  0.,  0.,  0.,  0.])
+x_sig = tensor([ 1.5000,  1.5000,  0.6000, 15.0000, 15.0000])
+y_mu = tensor([0])
+y_sig = tensor([40])
+Device: gpu
+
+
+CUDA available. Using device 'Tesla V100-PCIE-16GB'.
+
+Loading data:
+>>>Done.
+
+Constructing distance matrix:
+>>>Done.
+
+Constructing covariance matrices:
+>>>Done.
+
+Constructing BNN:
+>>>Setting up architecture:
+BNN(
+  (layers): ModuleList(
+    (0): BLinear(N_in=5, N_out=64)
+    (1): ReLU()
+    (2): BLinear(N_in=64, N_out=64)
+    (3): ReLU()
+    (4): BLinear(N_in=64, N_out=64)
+    (5): ReLU()
+    (6): BLinear(N_in=64, N_out=64)
+    (7): ReLU()
+    (8): BLinear(N_in=64, N_out=64)
+    (9): ReLU()
+    (10): BLinear(N_in=64, N_out=64)
+    (11): ReLU()
+    (12): BLinear(N_in=64, N_out=64)
+    (13): ReLU()
+    (14): BLinear(N_in=64, N_out=64)
+    (15): ReLU()
+    (16): BLinear(N_in=64, N_out=1)
+  )
+)
+>>>Moving model to requested device
