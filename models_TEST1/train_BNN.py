@@ -113,7 +113,7 @@ if __name__ == "__main__":
     Nh = p.N_hidden
     Nu = p.N_units
     Ns = 500
-    Nb = p.N_batch
+    Nb = 3000
     x_mu = p.x_mu
     x_sig = p.x_sig
     y_mu = p.y_mu
@@ -167,7 +167,7 @@ if __name__ == "__main__":
     # loader args
     largs = dict(
         x_mu=x_mu, x_sig=x_sig, y_mu=y_mu, y_sig=y_sig,
-        N_batch=p.N_batch, rng=rng
+        N_batch=Nb, rng=rng
     )
 
     # set up other training objects
