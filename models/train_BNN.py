@@ -12,6 +12,7 @@ import numpy as np
 from time import perf_counter as time
 from tqdm import trange
 from batchgauss import sample
+from banyan import BNN
 
 import torch
 from torch.optim import Adam
@@ -21,7 +22,6 @@ sys.path.append("..")
 import src.utils as u
 import src.params as p
 from src.ml import train_epoch as train
-from src.bnn import BNN
 from src.coords import convert_pos
 
 
@@ -90,13 +90,14 @@ def get_loader(d_matrix, obs, cov, rng, N_batch, x_mu, x_sig, y_mu, y_sig):
     # construct torch loader
     loader = u.construct_data_loader(x, y, N_batch)
     return loader
-
+ 
 
 if __name__ == "__main__":
 
     # script arg is random seed
-    assert len(sys.argv) == 2
-    seed = int(sys.argv[1])
+    seed = 0
+    #assert len(sys.argv) == 2
+    #seed = int(sys.argv[1])
 
     # start message
     print("\n", flush=True)
@@ -143,6 +144,9 @@ if __name__ == "__main__":
     df = pd.read_hdf(datafile)
     print(">>>Done.\n", flush=True)
 
+    # TRUNCATE REMOVE THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    df = df[:10000]
+
     # construct distance matrix
     print("Constructing distance matrix:", flush=True)
     d_matrix = np.array([df[f'd{i}'] for i in range(10)]).T
@@ -175,45 +179,51 @@ if __name__ == "__main__":
     scheduler = ReduceLR(optim, factor=p.lr_fac, min_lr=p.min_lr,
                          threshold=p.threshold, cooldown=p.cooldown)
 
-    # training loop
-    print("Commencing training:", flush=True)
-    training_data = []
-    tr = trange(p.N_epochs_max)
-    for i in tr:
+    # DELETE THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    loader = get_loader(d_matrix, obs, cov, **largs)
 
-        # start stopclock
-        t0 = time()
-
-        # get loaders
-        loader = get_loader(d_matrix, obs, cov, **largs)
-
-        # train
-        model.train()
-        loss, lr = train(model, device, loader, optim, scheduler, Ns)
-
-        # stop stopclock
-        t1 = time()
-        t = t1 - t0
-
-        # store training data
-        row = {
-            'loss': loss,
-            'lr': lr,
-            't': t
-        }
-        training_data.append(row)
-
-        # add loss and learning rate to progress bar
-        s = f'loss={loss:.4f}, lr={lr:.4e}'
-        tr.set_postfix_str(s)
-
-        # end early if min lr reached
-        if lr <= p.min_lr:
-            break
-
-    # save
-    print("Training complete. Saving...", flush=True)
-    model.save(f'{seed}.pth')
-    df = pd.DataFrame(training_data)
-    df.to_csv(f'{seed}_training_data.csv')
-    print("Done.", flush=True)
+# =============================================================================
+#     # training loop
+#     print("Commencing training:", flush=True)
+#     training_data = []
+#     tr = trange(p.N_epochs_max)
+#     for i in tr:
+#
+#         # start stopclock
+#         t0 = time()
+#
+#         # get loaders
+#         loader = get_loader(d_matrix, obs, cov, **largs)
+#
+#         # train
+#         model.train()
+#         loss, lr = train(model, device, loader, optim, scheduler, Ns)
+#
+#         # stop stopclock
+#         t1 = time()
+#         t = t1 - t0
+#
+#         # store training data
+#         row = {
+#             'loss': loss,
+#             'lr': lr,
+#             't': t
+#         }
+#         training_data.append(row)
+#
+#         # add loss and learning rate to progress bar
+#         s = f'loss={loss:.4f}, lr={lr:.4e}'
+#         tr.set_postfix_str(s)
+#
+#         # end early if min lr reached
+#         if lr <= p.min_lr:
+#             break
+#
+#     # save
+#     print("Training complete. Saving...", flush=True)
+#     model.save(f'{seed}.pth')
+#     df = pd.DataFrame(training_data)
+#     df.to_csv(f'{seed}_training_data.csv')
+#     print("Done.", flush=True)
+#
+# =============================================================================
