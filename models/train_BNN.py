@@ -6,6 +6,7 @@ Train BNN on Gaia DR3.
 Created: August 2022
 Author: A. P. Naik
 """
+import os
 import sys
 import pandas as pd
 import numpy as np
@@ -15,6 +16,9 @@ from batchgauss import sample
 from banyan import BNN
 
 import torch
+import torch.multiprocessing as mp
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau as ReduceLR
 
@@ -23,6 +27,11 @@ import src.utils as u
 import src.params as p
 from src.ml import train_epoch as train
 from src.coords import convert_pos
+
+
+def print_rank_message(rank, msg):
+    print(f"(GPU {rank}) " + msg, flush=True)
+    return
 
 
 def get_obs_cov(df):
@@ -90,14 +99,41 @@ def get_loader(d_matrix, obs, cov, rng, N_batch, x_mu, x_sig, y_mu, y_sig):
     # construct torch loader
     loader = u.construct_data_loader(x, y, N_batch)
     return loader
- 
+
+
+def run_process(rank, N_gpu, seed):
+
+    # initialize the process group
+    print_rank_message(rank, "Initialising process group:")
+    dist.init_process_group("nccl", rank=rank, world_size=N_gpu)
+    print_rank_message(rank, ">>>Done.")
+
+    # construct model
+    print_rank_message(rank, "Constructing model:")
+    model = BNN(N_in=5, N_out=1, N_hidden=p.N_hidden, N_units=p.N_units)
+    model.to(rank)
+    model.double()
+    model = DDP(model, device_ids=[rank])
+    print_rank_message(rank, ">>>Done.")
+
+    # construct other training objects
+    print_rank_message(rank, "Constructing other training objects:")
+    optim = Adam(model.parameters(), lr=p.lr0)
+    scheduler = ReduceLR(optim, factor=p.lr_fac, min_lr=p.min_lr,
+                         threshold=p.threshold, cooldown=p.cooldown)
+    print_rank_message(rank, ">>>Done.")
+
+    return
+
 
 if __name__ == "__main__":
 
+    # device count
+    N_gpu = 4
+
     # script arg is random seed
-    seed = 0
-    #assert len(sys.argv) == 2
-    #seed = int(sys.argv[1])
+    assert len(sys.argv) == 2
+    seed = int(sys.argv[1])
 
     # start message
     print("\n", flush=True)
@@ -105,47 +141,22 @@ if __name__ == "__main__":
     print(f"Training a BNN with random seed {seed}.", flush=True)
     print("%%%%%%%%%%%%%%%%\n", flush=True)
 
-    # data directory
-    ddir = u.get_datadir()
-    print(f"Found data directory: {ddir}\n", flush=True)
-
-    # various run parameters
-    datafile = ddir + "train.hdf5"
-    Nh = p.N_hidden
-    Nu = p.N_units
-    Ns = p.N_samples
-    Nb = p.N_batch
-    x_mu = p.x_mu
-    x_sig = p.x_sig
-    y_mu = p.y_mu
-    y_sig = p.y_sig
-    device = 'gpu'
-    print("Specified parameters:\n"
-          f"N_hidden = {Nh}\n"
-          f"N_units = {Nu}\n"
-          f"N_samples = {Ns}\n"
-          f"N_batch = {Nb}\n"
-          f"Training data file: {datafile}\n"
-          f"x_mu = {x_mu}\n"
-          f"x_sig = {x_sig}\n"
-          f"y_mu = {y_mu}\n"
-          f"y_sig = {y_sig}\n"
-          f"Device: {device}\n", flush=True)
-
-    # set device
-    device = u.find_torch_device(device, verbose=True)
-
-    # initialise random number generator
+    # Initialise RNG
+    print("Initialising RNG\n", flush=True)
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
-
-    # load datasets
-    print("Loading data:", flush=True)
-    df = pd.read_hdf(datafile)
     print(">>>Done.\n", flush=True)
 
-    # TRUNCATE REMOVE THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    df = df[:10000]
+    # set environment variables
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12355'
+
+    # load data
+    ddir = u.get_datadir()
+    print(f"Found data directory: {ddir}\n", flush=True)
+    print("Loading data:", flush=True)
+    df = pd.read_hdf(ddir + "train.hdf5")
+    print(">>>Done.\n", flush=True)
 
     # construct distance matrix
     print("Constructing distance matrix:", flush=True)
@@ -157,30 +168,17 @@ if __name__ == "__main__":
     obs, cov = get_obs_cov(df)
     print(">>>Done.\n", flush=True)
 
-    # set up model
-    print("Constructing BNN:", flush=True)
-    print(">>>Setting up architecture:", flush=True)
-    model = BNN(N_in=5, N_out=1, N_hidden=Nh, N_units=Nu)
-    print(f"{model}", flush=True)
-    print(">>>Moving model to requested device", flush=True)
-    model.to(device)
-    print(">>>Switching to double precision", flush=True)
-    model.double()
-    print(">>>Done.\n", flush=True)
+    # spawn parallel jobs and run
+    args = (N_gpu,)
+    mp.spawn(run_process, args=args, nprocs=N_gpu, join=True)
 
-    # loader args
-    largs = dict(
-        x_mu=x_mu, x_sig=x_sig, y_mu=y_mu, y_sig=y_sig,
-        N_batch=p.N_batch, rng=rng
-    )
 
-    # set up other training objects
-    optim = Adam(model.parameters(), lr=p.lr0)
-    scheduler = ReduceLR(optim, factor=p.lr_fac, min_lr=p.min_lr,
-                         threshold=p.threshold, cooldown=p.cooldown)
+#     # loader args
+#     largs = dict(
+#         x_mu=x_mu, x_sig=x_sig, y_mu=y_mu, y_sig=y_sig,
+#         N_batch=p.N_batch, rng=rng
+#     )
 
-    # DELETE THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    loader = get_loader(d_matrix, obs, cov, **largs)
 
 # =============================================================================
 #     # training loop
