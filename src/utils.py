@@ -8,8 +8,6 @@ Author: A. P. Naik
 """
 import os
 import numpy as np
-import torch
-from torch.utils.data import DataLoader, TensorDataset
 from tqdm import trange
 
 
@@ -23,39 +21,6 @@ def get_datadir():
 
 def rescale_data(data, mu, sig):
     return (data - mu) / sig
-
-
-# =============================================================================
-# def construct_data_loader(x, y, N_batch, shuffle=True, drop_last=True):
-#     dset = TensorDataset(x, y)
-#     loader = DataLoader(
-#         dset, batch_size=N_batch, shuffle=shuffle, drop_last=drop_last,
-#         pin_memory=True
-#     )
-#     return loader
-# =============================================================================
-
-# =============================================================================
-# 
-# def find_torch_device(device, verbose=False):
-# 
-#     if device == 'gpu':
-#         if torch.cuda.is_available():
-#             device = torch.device("cuda:0")
-#             d_name = torch.cuda.get_device_name(device)
-#             if verbose:
-#                 print(f"\nCUDA available. Using device '{d_name}'.\n", flush=True)
-#         else:
-#             if verbose:
-#                 print("CUDA unavailable / GPU not found. Using CPU.\n", flush=True)
-#             device = torch.device("cpu")
-#     elif device == 'cpu':
-#         device = torch.device("cpu")
-#     else:
-#         raise ValueError("Device not recognised, should be 'cpu' or 'gpu'.")
-# 
-#     return device
-# =============================================================================
 
 
 def subsample(input, N_sample, rng=None, return_both=False):

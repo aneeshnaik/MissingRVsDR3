@@ -1,0 +1,21 @@
+
+
+# DATA DIRECTORY
+
+## EDR3_predictions
+
+- EDR3_prediction_results.hdf5 (INPUT; produced in paper 1)
+- EDR3_prediction_results.npz and EDR3_prediction_aux.npz (produced by data/match_EDR3_predictions.py)
+
+## External
+
+- BJ_distances_prior.csv (INPUT; Bailer-Jones distance prior)
+
+## DR3_6D
+
+- DR3_6D.csv (INPUT; produced by query_DR3_6D.sql)
+- rybizki_flags.csv (INPUT; astrometric quality flags)
+- distance_samples (produced by sample_distances_6D.py)
+- test.hdf5 and train.hdf5 (produced by parse_6D.py)
+
+

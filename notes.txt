@@ -1,5 +1,0 @@
-
-
-TO DO
-=====
-- use Rybizki indicator to cut bad astrometry stars
