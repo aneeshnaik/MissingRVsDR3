@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     # load Gaia data as pandas DataFrame
     ddir = get_datadir()
-    df_iter = pd.read_csv(ddir + "DR3_6D.csv", chunksize=chunksize)
+    df_iter = pd.read_csv(ddir + "/DR3_6D/DR3_6D.csv", chunksize=chunksize)
 
     # loop over chunks
     for i, df in tqdm(enumerate(df_iter), total=N_chunks):
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
         # healpix numbers -> GGD prior params alpha, beta, L
         hpix = np.floor(df['source_id'] / 562949953421312).astype(np.int32)
-        prior_data = pd.read_csv(ddir + 'BJ_distances_prior.csv')
+        prior_data = pd.read_csv(ddir + '/DR3_6D/BJ_distances_prior.csv')
         alpha = prior_data.loc[hpix]['GGDalpha'].to_numpy()
         beta = prior_data.loc[hpix]['GGDbeta'].to_numpy()
         L = prior_data.loc[hpix]['GGDrlen'].to_numpy() / 1000
@@ -128,4 +128,4 @@ if __name__ == "__main__":
         N_filled += len(df)
 
     # save
-    np.save(ddir + 'distance_samples', samples)
+    np.save(ddir + '/DR3_6D/distance_samples', samples)

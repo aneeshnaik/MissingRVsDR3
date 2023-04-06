@@ -38,11 +38,11 @@ if __name__ == '__main__':
 
     # read DR3 file
     print(">>> Loading DR3 data")
-    df = pd.read_csv(ddir + 'DR3_6D.csv', usecols=cols)
+    df = pd.read_csv(ddir + 'DR3_6D/DR3_6D.csv', usecols=cols)
 
     # load Rybizki flags
     print(">>> Loading astrometric fidelities")
-    df1 = pd.read_csv(ddir + 'rybizki_flags.csv')
+    df1 = pd.read_csv(ddir + 'DR3_6D/rybizki_flags.csv')
 
     # merge
     print(">>> Merging fidelities")
@@ -93,6 +93,6 @@ if __name__ == '__main__':
 
     # save
     print(">>> Saving")
-    df_tr.to_hdf(f"{ddir}train.hdf5", "train", index=False, mode='w')
-    df_te.to_hdf(f"{ddir}test.hdf5", "test", index=False, mode='w')
+    df_tr.to_hdf(f"{ddir}/DR3_6D/train.hdf5", "train", index=False, mode='w')
+    df_te.to_hdf(f"{ddir}/DR3_6D/test.hdf5", "test", index=False, mode='w')
     print(">>> Done.")
