@@ -249,7 +249,7 @@ if __name__ == "__main__":
     # load data
     ddir = u.get_datadir()
     print(f"Found data directory: {ddir} || Loading data:", flush=True)
-    df = pd.read_hdf(ddir + "train.hdf5")
+    df = pd.read_hdf(ddir + "DR3_6D/train.hdf5")
     print(">>>Done.\n", flush=True)
 
     # construct distance matrix
