@@ -8,16 +8,23 @@ Author: A. P. Naik
 """
 import numpy as np
 import pandas as pd
-from sys import path
+import sys
 
-path.append("..")
+sys.path.append("..")
 import src.utils as u
 import src.params as p
 
 
 if __name__ == '__main__':
 
-    print("Parsing DR3 6D data:")
+    # dataset index is script argument
+    ind = sys.argv[1]
+
+    # truncation DELETE THIS #####################################################
+    nrows = 10000
+
+    # print start message
+    print("Parsing DR3 5D data:")
 
     # random number generator
     rng = np.random.default_rng(42)
@@ -28,7 +35,6 @@ if __name__ == '__main__':
     # columns to read
     cols = [
         'source_id',
-        'radial_velocity', 'radial_velocity_error',
         'ra', 'dec', 'pmra', 'pmdec',
         'ra_error', 'ra_dec_corr', 'ra_pmra_corr', 'ra_pmdec_corr',
         'dec_error', 'dec_pmra_corr', 'dec_pmdec_corr',
@@ -36,21 +42,13 @@ if __name__ == '__main__':
         'pmdec_error'
     ]
 
-    # read DR3 file
+    # load DR3 5D data
     print(">>> Loading DR3 data")
-    df = pd.read_csv(ddir + 'DR3_6D/DR3_6D.csv', usecols=cols)
-
-    # load Rybizki flags
-    print(">>> Loading astrometric fidelities")
-    df1 = pd.read_csv(ddir + 'DR3_6D/rybizki_flags.csv')
-
-    # merge
-    print(">>> Merging fidelities")
-    df = df.merge(df1, on='source_id')
+    df = pd.read_csv(ddir + f'DR3_5D/DR3_5D_{ind}.csv', usecols=cols)
 
     # read distances
     print(">>> Reading distances")
-    d = np.load(ddir + 'DR3_6D/distance_samples.npy')
+    d = np.load(ddir + f'DR3_5D/distance_samples_{ind}.npy')
 
     # add distances as columns
     print(">>> Appending distances to DataFrame")
@@ -71,28 +69,7 @@ if __name__ == '__main__':
     print(">>> Shuffling DF")
     df = df.sample(frac=1, random_state=rng).reset_index(drop=True)
 
-    # train/test split
-    print(">>> Performing train/test split")
-    df_tr, df_te = u.train_test_split(df, 0.8, rng=rng)
-
-    # construct distance matrix from training set
-    print(">>> Constructing distance matrix")
-    d_matrix = np.array([df_tr[f'd{i}'] for i in range(10)]).T
-    mu_d = np.mean(d_matrix, axis=-1)
-    sig_d = np.std(d_matrix, axis=-1)
-
-    # quality cuts (on training set only)
-    print(f">>> Quality cuts... pre-cut size {len(df_tr)}")
-    m = ((df_tr['fidelity'] > 0.5)
-         & (df_tr['v_los_err'] < p.VLOSERRCUT)
-         & (df_tr['pmdec_err'] < p.PMERRCUT)
-         & (df_tr['pmra_err'] < p.PMERRCUT)
-         & (sig_d / mu_d < p.DERRCUT))
-    df_tr = df_tr[m]
-    print(f">>> Quality cuts... post-cut size {len(df_tr)}")
-
     # save
     print(">>> Saving")
-    df_tr.to_hdf(f"{ddir}/DR3_6D/train.hdf5", "train", index=False, mode='w')
-    df_te.to_hdf(f"{ddir}/DR3_6D/test.hdf5", "test", index=False, mode='w')
+    df.to_hdf(ddir + f"DR3_5D/{ind}.hdf5", "train", index=False, mode='w')
     print(">>> Done.")

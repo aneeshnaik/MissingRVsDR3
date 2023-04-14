@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Sample Bailer-Jones geometric distances for RV stars.
+Sample Bailer-Jones geometric distances for 5D stars.
 
-Created: September 2022
+Created: April 2023
 Author: A. P. Naik
 """
 import numpy as np
@@ -52,9 +52,19 @@ def posterior(q, alpha, beta, L, w, wzp, sig_w):
 
 
 if __name__ == "__main__":
-
+    
+    # script arg is subsample index (0-31)
+    assert len(sys.argv) == 2
+    ind = int(sys.argv[1])
+    assert ind in range(32)
+    
+    # data directory
+    ddir = get_datadir()
+    
+    # get star count
+    N_tot = np.loadtxt(ddir + 'DR3_5D/star_counts.txt', dtype=int)[ind, 1]
+    
     # some numbers
-    N_tot = 33653049                     # total number of 6D stars
     N_samples = 10                       # number of distance samples per star
     chunksize = 1000                     # chunksize for data read
     N_chunks = (N_tot // chunksize) + 1  # number of chunks
@@ -64,9 +74,9 @@ if __name__ == "__main__":
     samples = np.zeros((N_tot, N_samples))
 
     # load Gaia data as pandas DataFrame
-    ddir = get_datadir()
-    df_iter = pd.read_csv(ddir + "/DR3_6D/DR3_6D.csv", chunksize=chunksize)
-
+    path = ddir + f"DR3_5D/DR3_5D_{ind}.csv"
+    df_iter = pd.read_csv(path, chunksize=chunksize)
+    
     # loop over chunks
     for i, df in tqdm(enumerate(df_iter), total=N_chunks):
 
@@ -130,6 +140,6 @@ if __name__ == "__main__":
         # feed into array
         samples[N_filled:N_filled + len(df)] = x_samples
         N_filled += len(df)
-
+    
     # save
-    np.save(ddir + '/DR3_6D/distance_samples', samples)
+    np.save(ddir + f'/DR3_5D/distance_samples_{ind}', samples)
