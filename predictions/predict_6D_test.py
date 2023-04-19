@@ -147,12 +147,12 @@ if __name__ == "__main__":
     # data loader args
     largs = dict(
         x_mu=p.x_mu, x_sig=p.x_sig, y_mu=p.y_mu, y_sig=p.y_sig,
-        N_batch=20000, rng=rng
+        N_batch=100000, rng=rng
     )
 
     # loop over samples
     print("Commencing loop:", flush=True)
-    y = torch.zeros((len(df), 16, N_samples_per_model), device=device)
+    y = torch.zeros((len(df), 16, N_samples_per_model))
     tr = trange(N_samples_per_model)
     for i in tr:
 
@@ -166,8 +166,9 @@ if __name__ == "__main__":
             for j, (x, _) in enumerate(loader):
                 x = x.to(device)
                 for k in range(16):
-                    y[filled:filled + len(x), k, i] = models[k](x, 1).squeeze()
+                    y[filled:filled + len(x), k, i] = models[k](x, 1).squeeze().to('cpu')
                 filled += len(x)
+    print(">>>Done.\n", flush=True)
 
     # reshape, rescale and convert to numpy
     print("Reshaping and rescaling predictions:", flush=True)
