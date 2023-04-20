@@ -31,13 +31,13 @@ def create_plot_data(dfile):
 
     # load predicted catalogue
     print(">>>Loading prediction catalogue")
-    with hFile(ddir + "EDR3MissingRVCatalogue.hdf5", 'r') as hf:
+    with hFile(ddir + "EDR3_predictions/EDR3MissingRVCatalogue.hdf5", 'r') as hf:
         ids = hf["ids"][:]
         v_pred = hf["v_samples"][:]
 
     # load DR3 RVs
     print(">>>Loading observed DR3 RVs")
-    df = pd.read_csv(ddir + "DR3_RVs.csv")
+    df = pd.read_csv(ddir + "DR3_6D/DR3_6D.csv")
 
     # cut prediction catalogue down to stars in DR3
     print(">>>Cutting prediction catalogue down to stars in DR3:")
