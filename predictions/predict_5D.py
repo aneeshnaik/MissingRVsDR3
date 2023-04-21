@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # load data
     ddir = u.get_datadir()
     print(f"Found data directory: {ddir} || Loading data:", flush=True)
-    df = pd.read_hdf(ddir + "DR3_5D/{data_ind}.hdf5")
+    df = pd.read_hdf(ddir + f"DR3_5D/{data_ind}.hdf5")
     print(">>>Done.\n", flush=True)
 
     # construct distance matrix
@@ -180,5 +180,5 @@ if __name__ == "__main__":
 
     # save
     print("Saving:", flush=True)
-    np.save(ddir + "DR3_predictions/5D_{data_ind}", v_los_preds)
+    np.save(ddir + f"DR3_predictions/5D_{data_ind}", v_los_preds)
     print(">>>Done.\n", flush=True)
