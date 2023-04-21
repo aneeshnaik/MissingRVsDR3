@@ -56,7 +56,8 @@ def create_plot_data(dfile):
 if __name__ == "__main__":
 
     # load plot data (create if not present)
-    dfile = "fig2_residual_trends_data.npz"
+    ddir = get_datadir()
+    dfile = ddir + "figures/fig2_residual_trends_data.npz"
     if not exists(dfile):
         create_plot_data(dfile)
     data = np.load(dfile)

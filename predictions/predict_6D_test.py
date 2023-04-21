@@ -109,6 +109,7 @@ if __name__ == "__main__":
     rng = np.random.default_rng(42)
     print(">>>Done.\n", flush=True)
 
+    # load data
     ddir = u.get_datadir()
     print(f"Found data directory: {ddir} || Loading data:", flush=True)
     df = pd.read_hdf(ddir + "DR3_6D/test.hdf5")
