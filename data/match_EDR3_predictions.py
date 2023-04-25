@@ -27,6 +27,7 @@ if __name__ == "__main__":
     ddir = get_datadir()
     pred_cat = ddir + "EDR3_predictions/EDR3MissingRVCatalogue.hdf5"
     DR3_cat = ddir + "DR3_6D/DR3_6D.csv"
+    dist_cat = ddir + "DR3_6D/distance_samples.npy"
     savefile = ddir + "EDR3_predictions/EDR3_prediction_results.npz"
     auxfile = ddir + "EDR3_predictions/EDR3_prediction_aux.hdf5"
 
@@ -36,9 +37,23 @@ if __name__ == "__main__":
         ids = hf["ids"][:]
         v_pred = hf["v_samples"][:]
 
-    # load DR3 RVs
+    # load DR3 RVs and distance samples
     print(">>>Loading observed DR3 RVs")
-    df = pd.read_csv(DR3_cat)
+    cols = [
+        'source_id',
+        'phot_g_mean_mag',
+        'rv_template_teff',
+        'radial_velocity',
+        'radial_velocity_error',
+        'parallax',
+        'parallax_error',
+        'ra',
+        'dec',
+        'pmra',
+        'pmdec',
+    ]
+    df = pd.read_csv(DR3_cat, usecols=cols)
+    dists = np.load(dist_cat)
 
     # cut prediction catalogue down to stars in DR3
     print(">>>Cutting prediction catalogue down to stars in DR3")
@@ -53,6 +68,7 @@ if __name__ == "__main__":
     ypos = np.searchsorted(x[xsorted], ids)
     indices = xsorted[ypos]
     df = df.loc[indices]
+    df['mean_dist'] = np.mean(dists[indices], axis=-1)
 
     # calculate means and quantiles
     print(">>>Calculating means and quantiles")
