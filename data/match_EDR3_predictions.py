@@ -5,7 +5,7 @@ Match entries from EDR3-derived to prediction catalogue to DR3 stars. Saves
 two files in EDR3_predictions subdirectory of data directory, both numpy
 archive files (saved with np.savez, can be opened with np.load):
     - EDR3_prediction_results.npz: truths and mean/variation of predictions
-    - EDR3_prediction_aux.npz: magnitudes, colours, T_eff
+    - EDR3_prediction_aux.hdf5: everything else for matched stars
 
 Created: July 2022
 Author: A. P. Naik
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     pred_cat = ddir + "EDR3_predictions/EDR3MissingRVCatalogue.hdf5"
     DR3_cat = ddir + "DR3_6D/DR3_6D.csv"
     savefile = ddir + "EDR3_predictions/EDR3_prediction_results.npz"
-    auxfile = ddir + "EDR3_predictions/EDR3_prediction_aux.npz"
+    auxfile = ddir + "EDR3_predictions/EDR3_prediction_aux.hdf5"
 
     # load predicted catalogue
     print(">>>Loading prediction catalogue")
@@ -46,18 +46,13 @@ if __name__ == "__main__":
     ids = ids[m]
     v_pred = v_pred[m]
 
-    # get true vels matching up ids of predicted vels
+    # cut DR3 down to match
     print(">>>Match IDs")
     x = df['source_id'].to_numpy()
     xsorted = np.argsort(x)
     ypos = np.searchsorted(x[xsorted], ids)
     indices = xsorted[ypos]
-    v_true = df['radial_velocity'][indices].to_numpy()
-    v_err = df['radial_velocity_error'][indices].to_numpy()
-    G = df['phot_g_mean_mag'][indices].to_numpy()
-    col = df['bp_rp'][indices].to_numpy()
-    G_RVS = df['grvs_mag'][indices].to_numpy()
-    T_eff = df['rv_template_teff'][indices].to_numpy()
+    df = df.loc[indices]
 
     # calculate means and quantiles
     print(">>>Calculating means and quantiles")
@@ -69,6 +64,6 @@ if __name__ == "__main__":
 
     # save
     print(">>>Saving")
-    np.savez(savefile, v_true=v_true, mu=mu, sig=sig)
-    np.savez(auxfile, v_err=v_err, G=G, col=col, G_RVS=G_RVS, T_eff=T_eff)
+    np.savez(savefile, v_true=df['radial_velocity'].to_numpy(), mu=mu, sig=sig)
+    df.to_hdf(auxfile, 'EDR3aux')
     print(">>>Done.\n")
