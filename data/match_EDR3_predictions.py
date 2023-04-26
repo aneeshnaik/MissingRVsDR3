@@ -76,10 +76,12 @@ if __name__ == "__main__":
     mu = batch(v_pred, N, fn=np.mean, fn_args={'axis': -1})
     q16 = batch(v_pred, N, fn=np.percentile, fn_args={'axis': -1, 'q': 16})
     q84 = batch(v_pred, N, fn=np.percentile, fn_args={'axis': -1, 'q': 84})
+    std = batch(v_pred, N, fn=np.std, fn_args={'axis': -1})
     sig = (q84 - q16) / 2
 
     # save
     print(">>>Saving")
-    np.savez(savefile, v_true=df['radial_velocity'].to_numpy(), mu=mu, sig=sig)
+    v_true = df['radial_velocity'].to_numpy()
+    np.savez(savefile, v_true=v_true, mu=mu, sig=sig, std=std)
     df.to_hdf(auxfile, 'EDR3aux')
     print(">>>Done.\n")

@@ -17,9 +17,35 @@ from os.path import exists
 from h5py import File as hFile
 from scipy.stats import norm
 from matplotlib.lines import Line2D
+from tqdm import trange
 
 sys.path.append("..")
 from src.utils import get_datadir
+
+
+def get_CDF(v_true, v_pred, h):
+
+    y = np.zeros_like(v_true)
+    N_samples = v_pred.shape[1]
+
+    batch_size = 10000
+    N = len(v_true)
+    N_batches = N // batch_size
+
+    # loop over batches
+    for i in trange(N_batches):
+        i0 = i * batch_size
+        i1 = (i + 1) * batch_size
+        x = 0.5 * (v_true[i0:i1, None] - v_pred[i0:i1]) / h[i0:i1, None]
+        y[i0:i1] = np.sum(0.5 * (np.tanh(x) + 1), axis=-1) / N_samples
+
+    # remainder data
+    if N % batch_size != 0:
+        i0 = N_batches * batch_size
+        x = 0.5 * (v_true[i0:, None] - v_pred[i0:]) / h[i0:, None]
+        y[i0:] = np.sum(0.5 * (np.tanh(x) + 1), axis=-1) / N_samples
+
+    return y
 
 
 def create_plot_data(dfile):
@@ -53,30 +79,20 @@ def create_plot_data(dfile):
     indices = xsorted[ypos]
     v_true = df['radial_velocity'][indices].to_numpy()
 
-    # downsample
-    print(">>>Downsample")
-    N_stars = len(v_true)
-    N_plot = 1000000
-    m = np.random.choice(np.arange(N_stars), N_plot, replace=False)
-    v_pred = v_pred[m]
-    v_true = v_true[m]
+    print(">>>Loading match data:")
+    data = np.load(ddir + "EDR3_predictions/EDR3_prediction_results.npz")
+    v_true = data['v_true']
+    mu = data['mu']
+    sig = data['sig']
+    h = 0.6 * data['std'] * np.power(v_pred.shape[1], -0.2)
 
-    # calculate percentiles & errors
-    print(">>>Calculating percentiles")
-    q16, q84 = np.percentile(v_pred, q=[16, 84], axis=-1)
-    sig = (q84 - q16) / 2
-
-    # PANEL 1: residuals
+    # residuals
     print(">>>Panel 1")
-    mu = np.mean(v_pred, axis=-1)
     ax1_y = (mu - v_true) / sig
 
     # PANEL 2: calibration curve
     print(">>>Panel 2")
-    N_samples = v_pred.shape[1]
-    h = 0.6 * np.std(v_pred, axis=-1)[:, None] * np.power(N_samples, -0.2)
-    x = 0.5 * (v_true[:, None] - v_pred) / h
-    ax2_y = np.sum(0.5 * (np.tanh(x) + 1), axis=-1) / N_samples
+    ax2_y = get_CDF(v_true, v_pred, h)
 
     # PANEL 3: error histogram
     print(">>>Panel 3")
@@ -205,8 +221,8 @@ if __name__ == "__main__":
 
     # x-labels
     lab = (r"$\displaystyle\frac"
-           r"{v_\mathrm{true} - \mu_\mathrm{pred.}}"
-           r"{\sigma_\mathrm{pred.}}$")
+            r"{v_\mathrm{true} - \mu_\mathrm{pred.}}"
+            r"{\sigma_\mathrm{pred.}}$")
     ax1.set_xlabel(lab)
     ax2.set_xlabel(r'$F(v_\mathrm{true}|\mathrm{model}) = \int_{-\infty}^{v_\mathrm{true}}\mathrm{posterior}(v)dv$')
     ax3.set_xlabel("Prediction uncertainties [km/s]")
