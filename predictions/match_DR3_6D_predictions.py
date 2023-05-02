@@ -67,6 +67,6 @@ if __name__ == "__main__":
 
     # save
     print(">>>Saving")
-    savefile = ddir + "DR3_predictions/DR3_6D_stats.npz"
+    savefile = ddir + "DR3_predictions/6D_test_stats.npz"
     np.savez(savefile, v_true=v_true, mu=mu, sig=sig, F=F)
     print(">>>Done.\n")
