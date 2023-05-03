@@ -23,7 +23,7 @@ def get_XYV_6D():
 
     # load DR3 data
     ddir = get_datadir()
-    cols = ['radial_velocity', 'ra', 'dec']
+    cols = ['radial_velocity', 'radial_velocity_error', 'ra', 'dec']
     df = pd.read_csv(ddir + 'DR3_6D/DR3_6D.csv', usecols=cols)
 
     # read distance samples ORIGINAL
@@ -42,7 +42,7 @@ def get_XYV_6D():
     Y = Y.astype(np.float32)
     V = df['radial_velocity'].to_numpy().astype(np.float32)
     SIGD = SIGD.astype(np.float32)
-    SIGV = df['radial_velocity_error'].to_numpy.astype(np.float32)
+    SIGV = df['radial_velocity_error'].to_numpy().astype(np.float32)
 
     return X, Y, V, SIGD, SIGV
 
