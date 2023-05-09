@@ -90,7 +90,7 @@ def get_loader(d_matrix, obs, cov, rng, N_batch, x_mu, x_sig):
 if __name__ == "__main__":
 
     # some numbers
-    N_samples_per_model = 16
+    N_samples_per_model = 64
     N_ensemble = 16
 
     # script argument is dataset ind
@@ -156,7 +156,6 @@ if __name__ == "__main__":
         loader = get_loader(d_matrix, obs, cov, **largs)
 
         # get preds
-        model.eval()
         with torch.no_grad():
             filled = 0
             for j, (x,) in enumerate(loader):
@@ -174,5 +173,6 @@ if __name__ == "__main__":
 
     # save
     print("Saving:", flush=True)
-    np.save(ddir + f"DR3_predictions/5D_{data_ind}", v_los_preds)
+    savename = ddir + f"DR3_predictions/5D_{data_ind}__raw_predictions"
+    np.save(savename, v_los_preds)
     print(">>>Done.\n", flush=True)

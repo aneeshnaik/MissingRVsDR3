@@ -30,7 +30,7 @@ def get_obs_cov(df):
     # obs array
     obs = np.stack(
         [df['ra'], df['dec'],
-         df['pmra'], df['pmdec'], df['v_los']],
+         df['pmra'], df['pmdec']],
         axis=-1
     )
 
@@ -39,12 +39,11 @@ def get_obs_cov(df):
     s1 = (df['dec_err']).to_numpy()
     s2 = (df['pmra_err']).to_numpy()
     s3 = (df['pmdec_err']).to_numpy()
-    s4 = (df['v_los_err']).to_numpy()
-    s_list = [s0, s1, s2, s3, s4]
+    s_list = [s0, s1, s2, s3]
 
     # construct correlation matrix
-    r = np.zeros((N, 5, 5))
-    for i in range(5):
+    r = np.zeros((N, 4, 4))
+    for i in range(4):
         r[:, i, i] = 1
     r[:, 0, 1] = r[:, 1, 0] = (df['ra_dec_corr']).to_numpy()
     r[:, 0, 2] = r[:, 2, 0] = (df['ra_pmra_corr']).to_numpy()
@@ -55,8 +54,8 @@ def get_obs_cov(df):
 
     # covariance matrix
     cov = np.zeros_like(r)
-    for i in range(5):
-        for j in range(5):
+    for i in range(4):
+        for j in range(4):
             si = s_list[i]
             sj = s_list[j]
             cov[:, i, j] = r[:, i, j] * si * sj
@@ -64,7 +63,7 @@ def get_obs_cov(df):
     return obs, cov
 
 
-def get_loader(d_matrix, obs, cov, rng, N_batch, x_mu, x_sig, y_mu, y_sig):
+def get_loader(d_matrix, obs, cov, rng, N_batch, x_mu, x_sig):
 
     # sample distance from distance matrix
     N = len(d_matrix)
@@ -78,21 +77,20 @@ def get_loader(d_matrix, obs, cov, rng, N_batch, x_mu, x_sig, y_mu, y_sig):
 
     # create torch tensors
     x = torch.tensor(np.stack([X, Y, Z, q[:, 3], q[:, 4]], axis=-1)).double()
-    y = torch.tensor(q[:, 5])[:, None].double()
 
     # rescale units
     x = u.rescale_data(x, mu=x_mu, sig=x_sig)
-    y = u.rescale_data(y, mu=y_mu, sig=y_sig)
 
     # construct torch loader
-    dset = TensorDataset(x, y)
+    dset = TensorDataset(x)
     loader = DataLoader(dset, batch_size=N_batch)
     return loader
 
 
 if __name__ == "__main__":
 
-    N_samples_per_model = 50
+    # some numbers
+    N_samples_per_model = 64
     N_ensemble = 16
 
     # find GPU, otherwise use CPU
@@ -114,10 +112,6 @@ if __name__ == "__main__":
     print(f"Found data directory: {ddir} || Loading data:", flush=True)
     df = pd.read_hdf(ddir + "DR3_6D/test.hdf5")
     print(">>>Done.\n", flush=True)
-
-    # get truths
-    v_los_true = df['v_los'].to_numpy()
-    v_los_err = df['v_los_err'].to_numpy()
 
     # construct distance matrix
     print("Constructing distance matrix:", flush=True)
@@ -146,10 +140,7 @@ if __name__ == "__main__":
     print(">>>Done.\n", flush=True)
 
     # data loader args
-    largs = dict(
-        x_mu=p.x_mu, x_sig=p.x_sig, y_mu=p.y_mu, y_sig=p.y_sig,
-        N_batch=100000, rng=rng
-    )
+    largs = dict(x_mu=p.x_mu, x_sig=p.x_sig, N_batch=100000, rng=rng)
 
     # loop over samples
     print("Commencing loop:", flush=True)
@@ -161,10 +152,9 @@ if __name__ == "__main__":
         loader = get_loader(d_matrix, obs, cov, **largs)
 
         # get preds
-        model.eval()
         with torch.no_grad():
             filled = 0
-            for j, (x, _) in enumerate(loader):
+            for j, (x,) in enumerate(loader):
                 x = x.to(device)
                 for k in range(16):
                     y[filled:filled + len(x), k, i] = models[k](x, 1).squeeze().to('cpu')
@@ -179,10 +169,6 @@ if __name__ == "__main__":
 
     # save
     print("Saving:", flush=True)
-    np.savez(
-        ddir + "DR3_predictions/6D_test.npz",
-        v_los_preds=v_los_preds,
-        v_los_true=v_los_true,
-        v_los_err=v_los_err
-    )
+    savename = ddir + f"DR3_predictions/6D_test_raw_predictions"
+    np.save(savename, v_los_preds)
     print(">>>Done.\n", flush=True)
