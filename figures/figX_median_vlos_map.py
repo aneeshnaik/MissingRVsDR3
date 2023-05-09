@@ -9,6 +9,7 @@ Author: A. P. Naik
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap as LSCmap
 plt.style.use('figstyle.mplstyle')
 
 from os.path import exists
@@ -143,9 +144,11 @@ if __name__ == "__main__":
 
     # plot settings
     extent = [X_max, X_min, Y_max, Y_min]
+    clist = ['teal', '#ffffff', 'goldenrod']
+    cmap = LSCmap.from_list("", clist)
     imargs = dict(
         origin='lower', vmax=110, vmin=-110, extent=extent,
-        cmap='Spectral_r', interpolation='none'
+        cmap=cmap, interpolation='none'
     )
     gridargs = dict(c='k', ls='dotted', lw=0.5)
 
