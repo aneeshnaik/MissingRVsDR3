@@ -115,7 +115,8 @@ if __name__ == "__main__":
     ddir = u.get_datadir()
     print(f"Found data directory: {ddir} || Loading data:", flush=True)
     df = pd.read_hdf(ddir + f"DR3_5D/{data_ind}.hdf5")
-    print(">>>Done.\n", flush=True)
+    N_stars = len(df)
+    print(f">>>Done. Found {N_stars} stars.\n", flush=True)
 
     # construct distance matrix
     print("Constructing distance matrix:", flush=True)
@@ -126,6 +127,9 @@ if __name__ == "__main__":
     print("Constructing covariance matrices:", flush=True)
     obs, cov = get_obs_cov(df)
     print(">>>Done.\n", flush=True)
+
+    # GET RID OF DATAFRAME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    del df
 
     # construct models
     print("Constructing BNN ensemble:", flush=True)
@@ -148,7 +152,7 @@ if __name__ == "__main__":
 
     # loop over samples
     print("Commencing loop:", flush=True)
-    y = torch.zeros((len(df), 16, N_samples_per_model))
+    y = torch.zeros((N_stars, 16, N_samples_per_model))
     tr = trange(N_samples_per_model)
     for i in tr:
 
@@ -166,8 +170,11 @@ if __name__ == "__main__":
     print(">>>Done.\n", flush=True)
 
     # reshape, rescale and convert to numpy
-    print("Reshaping and rescaling predictions:", flush=True)
-    y = y.reshape((len(df), N_ensemble * N_samples_per_model))
+    print("Reshaping predictions:", flush=True)
+    y = y.reshape((N_stars, N_ensemble * N_samples_per_model))
+    print(">>>Done.\n", flush=True)
+
+    print("Rescaling predictions:", flush=True)
     v_los_preds = (p.y_sig * y.cpu() + p.y_mu).detach().numpy().squeeze()
     print(">>>Done.\n", flush=True)
 
