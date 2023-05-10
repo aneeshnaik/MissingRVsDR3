@@ -34,9 +34,6 @@ if __name__ == "__main__":
     # load prediction catalogue (file large, use memmap)
     preds = np.load(predfile, mmap_mode='r')
 
-    # truncation; REMOVE THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    preds = preds[:1000]
-
     # loop over stars:
     #   - fit predictions w/ GMM
     #   - get GMM quantiles
@@ -64,8 +61,8 @@ if __name__ == "__main__":
         percentiles[i] = q
         pvals[i] = p
 
-    # get star source_ids; REMOVE TRUNCATION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ids = pd.read_hdf(idfile, stop=1000)['source_id']
+    # get star source_ids
+    ids = pd.read_hdf(idfile)['source_id']
 
     # save catalogue and save p-values separately
     df = pd.DataFrame()
