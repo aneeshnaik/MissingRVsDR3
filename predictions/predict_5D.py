@@ -173,6 +173,6 @@ if __name__ == "__main__":
 
     # save
     print("Saving:", flush=True)
-    savename = ddir + f"DR3_predictions/5D_{data_ind}__raw_predictions"
+    savename = ddir + f"DR3_predictions/5D_{data_ind}_raw_predictions"
     np.save(savename, v_los_preds)
     print(">>>Done.\n", flush=True)
