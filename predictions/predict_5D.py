@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     # script argument is dataset ind
     data_ind = sys.argv[1]
-    print("Generating predictions for dataset {data_ind}.\n", flush=True)
+    print(f"Generating predictions for dataset {data_ind}.\n", flush=True)
 
     # find GPU, otherwise use CPU
     print("Searching for GPU:", flush=True)
@@ -127,9 +127,6 @@ if __name__ == "__main__":
     print("Constructing covariance matrices:", flush=True)
     obs, cov = get_obs_cov(df)
     print(">>>Done.\n", flush=True)
-
-    # GET RID OF DATAFRAME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    del df
 
     # construct models
     print("Constructing BNN ensemble:", flush=True)
