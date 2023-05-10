@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Take predictions for 6D test set, fit with GMMs, save catalogue.
+Take predictions for 5D set, fit with GMMs, save catalogue.
 
 Created: May 2023
 Author: A. P. Naik
@@ -28,7 +28,7 @@ def parse_argument(arg, N_batches, N_datasets):
 if __name__ == "__main__":
 
     # parameters
-    N_datasets = 1  # no. of datasets
+    N_datasets = 32  # no. of datasets
     N_batches = 64  # no. of batches
     N_mix = 4       # no. of GMM components
     N_init = 3      # no. of random initialisations for GMM fitting
@@ -41,10 +41,10 @@ if __name__ == "__main__":
 
     # filenames
     ddir = get_datadir()
-    predfile = ddir + "DR3_predictions/6D_test_raw_predictions.npy"
-    idfile = ddir + "DR3_6D/test.hdf5"
-    savefile = ddir + f"DR3_predictions/6D_test_GMM_batch_{batch_ind}.hdf5"
-    pvalfile = ddir + f"DR3_predictions/6D_test_GMM_pvals_{batch_ind}.npy"
+    predfile = ddir + f"DR3_predictions/5D_{dataset_ind}_raw_predictions.npy"
+    idfile = ddir + f"DR3_5D/{dataset_ind}.hdf5"
+    savefile = ddir + f"DR3_predictions/5D_{dataset_ind}_GMM_batch_{batch_ind}.hdf5"
+    pvalfile = ddir + f"DR3_predictions/5D_{dataset_ind}_GMM_pvals_{batch_ind}.npy"
 
     # load prediction catalogue (file large, use memmap)
     preds = np.load(predfile, mmap_mode='r')
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     # get star source_ids
     ids = pd.read_hdf(idfile)['source_id'].to_numpy()
 
-    # batch; final batch bigger
+    # batch; final batch smaller
     N_stars = len(preds)
     batch_size = N_stars // N_batches
     i0 = batch_ind * batch_size
