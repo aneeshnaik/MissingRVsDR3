@@ -43,8 +43,8 @@ if __name__ == "__main__":
     ddir = get_datadir()
     predfile = ddir + "DR3_predictions/6D_test_raw_predictions.npy"
     idfile = ddir + "DR3_6D/test.hdf5"
-    savefile = ddir + f"DR3_predictions/6D_test_GMM_batch_{batch_ind}.hdf5"
-    pvalfile = ddir + f"DR3_predictions/6D_test_GMM_pvals_{batch_ind}.npy"
+    savefile = ddir + f"DR3_predictions/6D_test_GMM_batches/6D_test_GMM_batch_{batch_ind}.hdf5"
+    pvalfile = ddir + f"DR3_predictions/6D_test_GMM_batches/6D_test_GMM_pvals_{batch_ind}.npy"
 
     # load prediction catalogue (file large, use memmap)
     preds = np.load(predfile, mmap_mode='r')
