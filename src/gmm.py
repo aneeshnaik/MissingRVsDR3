@@ -23,12 +23,28 @@ def fit_1D_gmm(x, N_mix, N_init=2):
     # get params
     weights = gmm.weights_
     means = gmm.means_.squeeze()
-    vars = gmm.covariances_.squeeze()
+    variances = gmm.covariances_.squeeze()
 
-    return weights, means, vars
+    return weights, means, variances
 
 
-def gmm_cdf(x, weights, means, vars):
+def gmm_pdf(x, weights, means, variances):
+    """PDF of Gaussian mixture, evaluated at points x."""
+
+    # infer no. of components
+    N_mix = len(weights)
+
+    # loop over components, sum PDF
+    pdf = 0
+    for i in range(N_mix):
+        loc = means[i]
+        scale = np.sqrt(variances[i])
+        pdf += weights[i] * stats.norm.pdf(x, loc=loc, scale=scale)
+
+    return pdf
+
+
+def gmm_cdf(x, weights, means, variances):
     """CDF of Gaussian mixture, evaluated at points x."""
 
     # infer no. of components
@@ -38,27 +54,27 @@ def gmm_cdf(x, weights, means, vars):
     cdf = 0
     for i in range(N_mix):
         loc = means[i]
-        scale = np.sqrt(vars[i])
+        scale = np.sqrt(variances[i])
         cdf += weights[i] * stats.norm.cdf(x, loc=loc, scale=scale)
 
     return cdf
 
 
-def gmm_percentile(weights, means, vars, q, N_pts=10000):
+def gmm_percentile(weights, means, variances, q, N_pts=10000):
     """Interpolate percentile q of GMM with given weights, means, variances."""
 
     # convert args to numpy arrays
     weights = np.array(weights)
     means = np.array(means)
-    vars = np.array(vars)
+    variances = np.array(variances)
 
     # interpolation points
-    x_min = min(means - 10 * np.sqrt(vars))
-    x_max = max(means + 10 * np.sqrt(vars))
+    x_min = min(means - 10 * np.sqrt(variances))
+    x_max = max(means + 10 * np.sqrt(variances))
     x = np.linspace(x_min, x_max, N_pts)
 
     # calculate CDF
-    F = gmm_cdf(x, weights, means, vars)
+    F = gmm_cdf(x, weights, means, variances)
 
     # linear interpolation
     # if q array-like, loop over q and calculate all percentiles, return array
