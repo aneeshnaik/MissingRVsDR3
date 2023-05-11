@@ -5,7 +5,7 @@
 #SBATCH --partition=gpu
 #SBATCH --qos=gpu
 #SBATCH --gres=gpu:1
-#SBATCH --time=06:00:00
+#SBATCH --time=03:00:00
 #SBATCH --account=sc094
 #SBATCH --job-name=GMM6D
 
