@@ -8,6 +8,7 @@ Author: A. P. Naik
 """
 import pandas as pd
 import sys
+from tqdm import trange
 
 sys.path.append("..")
 from src.utils import get_datadir
@@ -15,7 +16,7 @@ from src.utils import get_datadir
 if __name__ == "__main__":
 
     # parse argument
-    assert len(sys.argv == 2)
+    assert len(sys.argv) == 2
     dset_ind = int(sys.argv[1])
 
     # directory/file names
@@ -26,7 +27,7 @@ if __name__ == "__main__":
 
     # loop over batches
     dfs = []
-    for i in range(64):
+    for i in trange(64):
         dfs.append(pd.read_hdf(batchdir + f"5D_{dset_ind}_GMM_batch_{i}.hdf5"))
 
     # concatenate full DataFrame
