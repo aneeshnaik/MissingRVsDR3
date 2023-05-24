@@ -81,8 +81,8 @@ if __name__ == "__main__":
 
     # calculate sample mean and SD
     print("Calculating sample mean and SD:", flush=True)
-    mu = np.mean(preds, axis=-1)
-    std = np.std(preds, axis=-1)
+    sample_mean = np.mean(preds, axis=-1)
+    sample_std = np.std(preds, axis=-1)
     print(">>>Done.\n", flush=True)
 
     # loop over stars:
@@ -118,8 +118,8 @@ if __name__ == "__main__":
     print("Saving:", flush=True)
     df = pd.DataFrame()
     df['source_id'] = ids
-    df['sample_mean'] = mu.astype(np.float32)
-    df['sample_std'] = std.astype(np.float32)
+    df['sample_mean'] = sample_mean.astype(np.float32)
+    df['sample_std'] = sample_std.astype(np.float32)
     df['q050'] = percentiles[:, 0].astype(np.float32)
     df['q159'] = percentiles[:, 1].astype(np.float32)
     df['q500'] = percentiles[:, 2].astype(np.float32)
