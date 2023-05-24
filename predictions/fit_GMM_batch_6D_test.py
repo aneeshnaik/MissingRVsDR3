@@ -68,6 +68,10 @@ if __name__ == "__main__":
     h = 0.6 * np.std(preds, axis=-1) * np.power(N_samples, -0.2)
     preds = preds + h[:, None] * stats.logistic.rvs(size=N_samples)[None]
 
+    # calculate sample mean and SD
+    mu = np.mean(preds, axis=-1)
+    std = np.std(preds, axis=-1)
+
     # loop over stars:
     #   - fit predictions w/ GMM
     #   - get GMM quantiles
@@ -98,6 +102,8 @@ if __name__ == "__main__":
     # save catalogue and save p-values separately
     df = pd.DataFrame()
     df['source_id'] = ids
+    df['sample_mean'] = mu.astype(np.float32)
+    df['sample_std'] = std.astype(np.float32)
     df['q050'] = percentiles[:, 0].astype(np.float32)
     df['q159'] = percentiles[:, 1].astype(np.float32)
     df['q500'] = percentiles[:, 2].astype(np.float32)
