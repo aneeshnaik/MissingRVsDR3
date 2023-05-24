@@ -100,7 +100,7 @@ if __name__ == "__main__":
     lrs, mrs = load_catalogues()
     print(">>>Done.\n")
 
-    # apply quality cuts
+    # apply initial quality cuts
     print("Quality cuts:")
     lrs, mrs = apply_quality_cuts(lrs, mrs)
     print(">>>Done.\n")
@@ -108,6 +108,11 @@ if __name__ == "__main__":
     # compile averaged catalogue
     print("Computing velocities:")
     df = get_velocities_dataframe(lrs, mrs)
+    print(">>>Done.\n")
+
+    # additional v_err cut
+    print("Error cut:")    
+    df = df[df['v_err'] < 3.5]
     print(">>>Done.\n")
 
     # save
