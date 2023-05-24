@@ -63,6 +63,11 @@ if __name__ == "__main__":
         preds = preds[i0:i0 + batch_size]
         ids = ids[i0:i0 + batch_size]
 
+    # smooth preds with logistic kernel
+    N_samples = preds.shape[1]
+    h = 0.6 * np.std(preds, axis=-1) * np.power(N_samples, -0.2)
+    preds = preds + h[:, None] * stats.logistic.rvs(size=N_samples)[None]
+
     # loop over stars:
     #   - fit predictions w/ GMM
     #   - get GMM quantiles
@@ -78,7 +83,7 @@ if __name__ == "__main__":
         w, mu, var = fit_1D_gmm(preds[i], N_mix=N_mix, N_init=N_init)
 
         # quantiles
-        q = gmm_percentile(w, mu, var, q=(15.9, 50, 84.1))
+        q = gmm_percentile(w, mu, var, q=(5, 15.9, 50, 84.1, 95))
 
         # KS-test
         p = stats.kstest(preds[i], gmm_cdf, args=(w, mu, var)).pvalue
@@ -93,9 +98,11 @@ if __name__ == "__main__":
     # save catalogue and save p-values separately
     df = pd.DataFrame()
     df['source_id'] = ids
-    df['q159'] = percentiles[:, 0]
-    df['q500'] = percentiles[:, 1]
-    df['q841'] = percentiles[:, 2]
+    df['q050'] = percentiles[:, 0].astype(np.float32)
+    df['q159'] = percentiles[:, 1].astype(np.float32)
+    df['q500'] = percentiles[:, 2].astype(np.float32)
+    df['q841'] = percentiles[:, 3].astype(np.float32)
+    df['q950'] = percentiles[:, 4].astype(np.float32)
     for i in range(N_mix):
         df[f'w{i}'] = weights[:, i].astype(np.float32)
     for i in range(N_mix):
