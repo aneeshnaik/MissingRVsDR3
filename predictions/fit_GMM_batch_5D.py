@@ -93,7 +93,7 @@ if __name__ == "__main__":
     weights = np.zeros((len(preds), N_mix))
     means = np.zeros_like(weights)
     vars = np.zeros_like(weights)
-    percentiles = np.zeros((len(preds), 3))
+    percentiles = np.zeros((len(preds), 5))
     pvals = np.zeros(len(preds))
     for i in trange(len(preds)):
 
