@@ -16,7 +16,7 @@ cd $SLURM_SUBMIT_DIR
 export PYTHONPATH="${PYTHONPATH}:/work/sc094/sc094/anaik/Python"
 
 # project environment variables
-export MRVDR3DDIR=/work/sc094/sc094/anaik/Data/MissingRVsDR3Data/
+export MRVDR3DDIR=/work/sc094/sc094/shared/MissingRVsDR3Data/
 
 # conda env
 eval "$(/work/sc094/sc094/anaik/miniconda3/bin/conda shell.bash hook)"
