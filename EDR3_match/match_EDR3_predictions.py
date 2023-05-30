@@ -51,8 +51,7 @@ if __name__ == "__main__":
     pred_cat = ddir + "EDR3_predictions/EDR3MissingRVCatalogue.hdf5"
     DR3_cat = ddir + "DR3_6D/DR3_6D.csv"
     dist_cat = ddir + "DR3_6D/distance_samples.npy"
-    savefile = ddir + "EDR3_predictions/EDR3_prediction_results.npz"
-    auxfile = ddir + "EDR3_predictions/EDR3_prediction_aux.hdf5"
+    savefile = ddir + "EDR3_predictions/EDR3_prediction_match.hdf5"
 
     # load predicted catalogue
     print(">>>Loading prediction catalogue")
@@ -91,8 +90,10 @@ if __name__ == "__main__":
     ypos = np.searchsorted(x[xsorted], ids)
     indices = xsorted[ypos]
     df = df.loc[indices]
-    df['mean_dist'] = np.mean(dists[indices], axis=-1)
-    v_true = df['radial_velocity'].to_numpy()
+
+    # append distance mean and SD to df
+    df['dist_mean'] = np.mean(dists[indices], axis=-1).astype(np.float32)
+    df['dist_err'] = np.std(dists[indices], axis=-1).astype(np.float32)
 
     # calculate means and quantiles
     print(">>>Calculating means and quantiles")
@@ -103,13 +104,21 @@ if __name__ == "__main__":
     std = batch(v_pred, N, fn=np.std, fn_args={'axis': -1})
     sig = (q84 - q16) / 2
 
+    # calculate posterior positions
     print(">>>Calculating F values")
     N_samples = v_pred.shape[1]
     h = 0.6 * std * np.power(N_samples, -0.2)
-    F = get_CDF(v_true, v_pred, h)
+    F = get_CDF(df['radial_velocity'].to_numpy(), v_pred, h)
+
+    # appending prediction mean/sig and F val to dataframe
+    df['mu_pred'] = mu.astype(np.float32)
+    df['sig_pred'] = sig.astype(np.float32)
+    df['F'] = F.astype(np.float32)
+
+    # single generation of velocity posterior
+    df['single_prediction'] = v_pred[:, 0].astype(np.float32)
 
     # save
     print(">>>Saving")
-    np.savez(savefile, v_true=v_true, mu=mu, sig=sig, F=F)
-    df.to_hdf(auxfile, 'EDR3aux')
+    df.to_hdf(savefile, 'EDR3Match', index=False, mode='w')
     print(">>>Done.\n")
