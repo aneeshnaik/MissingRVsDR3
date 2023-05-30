@@ -45,7 +45,11 @@ def gmm_pdf(x, weights, means, variances):
 
 
 def gmm_cdf(x, weights, means, variances):
-    """CDF of Gaussian mixture, evaluated at points x."""
+    """
+    CDF of Gaussian mixture, evaluated at points x.
+    x is 1D array, shape (N_pts), weights/means/variances all 1D arrays shape
+    (N_mix).
+    """
 
     # infer no. of components
     N_mix = len(weights)
@@ -59,6 +63,26 @@ def gmm_cdf(x, weights, means, variances):
 
     return cdf
 
+
+def gmm_cdf_batch(x, weights, means, variances):
+    """
+    CDF of Gaussian mixture, evaluated at points x, different GMM at each
+    point.
+    x is 1D array, shape (N_pts), weights/means/variances all 2D arrays shape
+    (N_pts, N_mix).
+    """
+
+    # infer no. of components
+    N_mix = weights.shape[1]
+
+    # loop over components, sum CDF
+    cdf = 0
+    for i in range(N_mix):
+        loc = means[:, i]
+        scale = np.sqrt(variances[:, i])
+        cdf += weights[:, i] * stats.norm.cdf(x, loc=loc, scale=scale)
+
+    return cdf
 
 def gmm_percentile(weights, means, variances, q, N_pts=10000):
     """Interpolate percentile q of GMM with given weights, means, variances."""
