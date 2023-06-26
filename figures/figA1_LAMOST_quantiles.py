@@ -119,7 +119,7 @@ if __name__ == "__main__":
 
     # load plot data (create if not present)
     ddir = get_datadir()
-    dfile = ddir + "figures/figX2_LAMOST_quantiles_data.npz"
+    dfile = ddir + "figures/figA1_LAMOST_quantiles_data.npz"
     if not exists(dfile):
         create_plot_data(dfile, diffcut)
     data = np.load(dfile)
@@ -181,4 +181,4 @@ if __name__ == "__main__":
     ax2.text(0.5, 0.6, r"(mismatched vels. removed)", ha='center', va='top', transform=ax2.transAxes)
 
     # save figure
-    plt.savefig("figX2_LAMOST_quantiles.pdf")
+    plt.savefig("figA1_LAMOST_quantiles.pdf")
