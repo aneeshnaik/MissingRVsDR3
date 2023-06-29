@@ -7,7 +7,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --time=02:00:00
 #SBATCH --account=sc094
-#SBATCH --job-name=FIG4
+#SBATCH --job-name=FIG8
 
 # change to submission directory
 cd $SLURM_SUBMIT_DIR
@@ -16,10 +16,10 @@ cd $SLURM_SUBMIT_DIR
 export PYTHONPATH="${PYTHONPATH}:/work/sc094/sc094/anaik/Python"
 
 # project environment variables
-export MRVDR3DDIR=/work/sc094/sc094/anaik/Data/MissingRVsDR3Data/
+export MRVDR3DDIR=/work/sc094/sc094/shared/MissingRVsDR3Data/
 
 # conda env
 eval "$(/work/sc094/sc094/anaik/miniconda3/bin/conda shell.bash hook)"
 source activate MissingRVs
 
-python figX_median_vlos_map_save_XYV.py
+python fig8_median_vlos_map_save_XYV.py

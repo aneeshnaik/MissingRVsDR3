@@ -108,7 +108,7 @@ if __name__ == "__main__":
     X_max = 1
     Y_min = -9
     Y_max = 9
-    f_cut = 0.1   # fractional distance error cut
+    f_cut = 0.25   # fractional distance error cut
     sig_cut = 80  # posterior width cut
 
     # get 6D data
