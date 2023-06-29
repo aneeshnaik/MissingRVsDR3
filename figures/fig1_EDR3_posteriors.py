@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Vertically stacked EDR3-derived posteriors against measured DR3 values. 
+Vertically stacked EDR3-derived posteriors against measured DR3 values.
 
 Created: May 2023
 Author: A. P. Naik
@@ -39,9 +39,17 @@ def get_v_data(N):
         ids = hf["ids"][:]
         v_pred = hf["v_samples"][:]
 
+    # cut by radial velocity error
+    print(">>>RV error cut")
+    m = (df['radial_velocity_error'] < 5)
+    df = df[m]
+
     # random subset
-    print(">>>Match")
+    print(">>>Random subset")
     df = df.iloc[np.random.choice(np.arange(len(df)), N, replace=False)]
+
+    # match
+    print(">>>Match")
     m = np.in1d(ids, df['source_id'].to_numpy())
     ids = ids[m]
     v_pred = v_pred[m]
@@ -108,17 +116,17 @@ if __name__ == "__main__":
     c1 = 'teal'
     c2 = 'goldenrod'
     clist = ['#ffffff', '#f0f6f6', '#e2eded', '#d4e5e4',
-              '#c5dcdb', '#b7d3d3', '#a9cbca', '#9ac2c1',
-              '#8cbab9', '#7db1b0', '#6ea9a8', '#5fa09f',
-              '#4f9897', '#3d908f', '#288787', '#007f7f']
+             '#c5dcdb', '#b7d3d3', '#a9cbca', '#9ac2c1',
+             '#8cbab9', '#7db1b0', '#6ea9a8', '#5fa09f',
+             '#4f9897', '#3d908f', '#288787', '#007f7f']
     cmap = LSCmap.from_list("", clist)
 
     # setup figure
-    fig = plt.figure(figsize=(6.9, 4.5))
-    X0 = 0.1
-    X3 = 0.94
+    fig = plt.figure(figsize=(7, 4.5))
+    X0 = 0.09
+    X3 = 0.93
     Y0 = 0.085
-    Y1 = 0.98
+    Y1 = 0.94
     Xgap = 0.01
     cdX = 0.035
     X2 = X3 - cdX
@@ -129,7 +137,7 @@ if __name__ == "__main__":
     cax = fig.add_axes([X2, Y0, cdX, dY])
 
     # plot
-    label = r'True $v_\mathrm{los}$'
+    label = r'Measured radial velocity'
     extent = [-120, 120, 0.5, N_plot + 0.5]
     line = ax.plot(trues, np.arange(N_plot) + 1, c=c2, lw=2, label=label)[0]
     vmax = 0.025
@@ -140,12 +148,13 @@ if __name__ == "__main__":
 
     # labels ticks etc.
     ax.grid(True, c='k', ls='dotted')
-    ax.set_xlabel(r"$v_\mathrm{los}$ [km/s]")
-    ax.set_ylabel(r"Star \#")
+    ax.set_xlabel(r"Radial velocity [km/s]")
+    ax.set_ylabel(r"Star #")
     cax.set_ylabel("Frequency Density [arbitrary units]")
     handles = [line, Patch(color=c1, label="Predictions")]
     ax.legend(handles=handles, facecolor='w', edgecolor='k')
     ax.tick_params(top=True, right=True, direction='inout')
+    fig.suptitle("Pre-DR3 predictions: predictive distributions compared with DR3 measurements")
 
     # save
-    plt.savefig("fig1_EDR3_posteriors.pdf", dpi=800)
+    fig.savefig("fig1_EDR3_posteriors.pdf", dpi=800)

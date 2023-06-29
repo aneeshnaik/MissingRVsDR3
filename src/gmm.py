@@ -124,3 +124,34 @@ def gmm_percentile(weights, means, variances, q, N_pts=10000):
         xq = x0 + (x1 - x0) * (Fq - F0) / (F1 - F0)
 
     return xq
+
+
+def gmm_batchsample(weights, means, variances, rng=None, seed=None):
+    """
+    Draw 1 sample each from batch of GMMs specified by matrices of weights,
+    means, and variances (all shaped N_batch x N_mix). Optionally provide
+    numpy RNG or seed to make RNG.
+    """
+    # instance RNG if not provided
+    if rng is None:
+        if seed is None:
+            rng = np.random.default_rng()
+        else:
+            rng = np.random.default_rng(seed)
+
+    # infer batch size number of components
+    N = weights.shape[0]
+    M = weights.shape[1]
+
+    # choose which component for each row in batch
+    cumulative_weights = np.cumsum(weights, axis=1)
+    random_numbers = rng.uniform(size=(weights.shape[0], 1))
+    i = (random_numbers < cumulative_weights).argmax(axis=1)
+
+    # get corresponding locs/scales
+    locs = means[np.arange(N), i]
+    scales = np.sqrt(variances[np.arange(N), i])
+
+    # draw samples
+    x = rng.normal(loc=locs, scale=scales)
+    return x
