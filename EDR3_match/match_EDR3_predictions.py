@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Match entries from EDR3-derived prediction catalogue to DR3 stars. Saves
-two files in EDR3_predictions subdirectory of data directory:
-    - EDR3_prediction_results.npz: truths and mean/variation of predictions
-    - EDR3_prediction_aux.hdf5: everything else for matched stars
+Match entries from EDR3-derived prediction catalogue to DR3 stars. Saves match
+HDF5 file in EDR3_predictions subdirectory of data directory.
 
 Created: July 2022
 Author: A. P. Naik
