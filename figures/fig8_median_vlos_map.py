@@ -14,28 +14,17 @@ plt.style.use('figstyle.mplstyle')
 
 from os.path import exists
 from scipy.ndimage import gaussian_filter
+from tqdm import trange
 
 sys.path.append("..")
 from src.utils import get_datadir
 
 
-def calc_vlos_map(X, Y, V, SIGD, SIGV, N_bins, X_min, X_max, Y_min, Y_max,
-                  SIGD_cut, SIGV_cut):
+def calc_vlos_map(X, Y, V, N_bins, X_min, X_max, Y_min, Y_max):
 
     # bin edges
     X_edges = np.linspace(X_min, X_max, N_bins + 1)
     Y_edges = np.linspace(Y_min, Y_max, N_bins + 1)
-
-    # cut to region and quality
-    m = ((X > X_min)
-         & (X < X_max)
-         & (Y > Y_min)
-         & (Y < Y_max)
-         & (SIGV < SIGV_cut)
-         & (SIGD < SIGD_cut))
-    X = X[m]
-    Y = Y[m]
-    V = V[m]
 
     # bin
     inds_X = np.digitize(X, X_edges) - 1
@@ -58,7 +47,7 @@ def calc_vlos_map(X, Y, V, SIGD, SIGV, N_bins, X_min, X_max, Y_min, Y_max,
     # loop over bins, get median
     counter = 0
     mu = np.zeros((N_bins, N_bins))
-    for i in range(N_bins):
+    for i in trange(N_bins):
         for j in range(N_bins):
             ind = i * N_bins + j
             count = counts[ind]
@@ -73,9 +62,7 @@ def calc_vlos_map(X, Y, V, SIGD, SIGV, N_bins, X_min, X_max, Y_min, Y_max,
     return mu
 
 
-def create_plot_data(
-        dfile, N_bins, X_min, X_max, Y_min, Y_max, SIGD_cut, SIGV_cut
-):
+def create_plot_data(dfile, N_bins, X_min, X_max, Y_min, Y_max):
 
     # load data
     print("Loading data:")
@@ -84,26 +71,21 @@ def create_plot_data(
     X5 = data['X_5D']
     Y5 = data['Y_5D']
     V5 = data['V_5D']
-    SIGD5 = data['SIGD_5D']
-    SIGV5 = data['SIGV_5D']
     X6 = data['X_6D']
     Y6 = data['Y_6D']
     V6 = data['V_6D']
-    SIGD6 = data['SIGD_6D']
-    SIGV6 = data['SIGV_6D']
     print(">>>Done.\n")
 
     # construct maps
     print("5D map:")
     mu5 = calc_vlos_map(
-        X5, Y5, V5, SIGD5, SIGV5,
-        N_bins, X_min, X_max, Y_min, Y_max, SIGD_cut, SIGV_cut
+        X5, Y5, V5, N_bins, X_min, X_max, Y_min, Y_max
     )
     print(">>>Done.\n")
     print("6D map:")
     mu6 = calc_vlos_map(
-        X6, Y6, V6, SIGD6, SIGV6,
-        N_bins, X_min, X_max, Y_min, Y_max, SIGD_cut, SIGV_cut)
+        X6, Y6, V6, N_bins, X_min, X_max, Y_min, Y_max
+    )
     print(">>>Done.\n")
 
     np.savez(dfile, mu5=mu5, mu6=mu6)
@@ -118,23 +100,19 @@ if __name__ == "__main__":
     X_max = 1
     Y_min = -9
     Y_max = 9
-    SIGD_cut = 1.5
-    SIGV_cut = 80
 
     # load plot data (create if not present)
     ddir = get_datadir()
     dfile = ddir + "figures/fig8_median_vlos_map_data.npz"
     if not exists(dfile):
-        create_plot_data(
-            dfile, N_bins, X_min, X_max, Y_min, Y_max, SIGD_cut, SIGV_cut
-        )
+        create_plot_data(dfile, N_bins, X_min, X_max, Y_min, Y_max)
     data = np.load(dfile)
     mu5 = data['mu5']
     mu6 = data['mu6']
 
     # smooth data
-    mu5 = gaussian_filter(data['mu5'], sigma=2)
-    mu6 = gaussian_filter(data['mu6'], sigma=2)
+    mu5 = gaussian_filter(data['mu5'], sigma=3)
+    mu6 = gaussian_filter(data['mu6'], sigma=3)
 
     # bin edges
     X_edges = np.linspace(X_min, X_max, N_bins + 1)
