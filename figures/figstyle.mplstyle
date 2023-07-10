@@ -1,6 +1,6 @@
 text.usetex : False
 font.family : serif
-font.serif : Times New Roman
+font.serif : Nimbus Roman
 font.size : 9
 ytick.labelsize : 8
 xtick.labelsize : 8

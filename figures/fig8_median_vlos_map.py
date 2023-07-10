@@ -8,6 +8,7 @@ Author: A. P. Naik
 """
 import sys
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap as LSCmap
 plt.style.use('figstyle.mplstyle')
@@ -18,6 +19,8 @@ from tqdm import trange
 
 sys.path.append("..")
 from src.utils import get_datadir
+from src.coords import convert_pos
+from src.constants import D_GC
 
 
 def calc_vlos_map(X, Y, V, N_bins, X_min, X_max, Y_min, Y_max):
@@ -62,10 +65,24 @@ def calc_vlos_map(X, Y, V, N_bins, X_min, X_max, Y_min, Y_max):
     return mu
 
 
+def rolling_d99(d, lon, l_cen, width=np.pi / 6):
+    l_min = l_cen - width / 2
+    l_max = l_cen + width / 2
+    if l_min < 0:
+        m = (lon < l_max) | (lon >= l_min + 2 * np.pi)
+    elif l_max > 2 * np.pi:
+        m = (lon < l_max - 2 * np.pi) | (lon >= l_min)
+    elif (l_min >= 0) and (l_max <= 2 * np.pi):
+        m = (lon >= l_min) & (lon < l_max)
+    else:
+        assert False, f"Couldn't understand lmin={l_min}, lmax={l_max}"
+    return np.percentile(d[m], q=(99))
+
+
 def create_plot_data(dfile, N_bins, X_min, X_max, Y_min, Y_max):
 
-    # load data
-    print("Loading data:")
+    # load XYV data
+    print("Loading XYV data:")
     ddir = get_datadir()
     data = np.load(ddir + "figures/fig8_median_vlos_map_XYV_data.npz")
     X5 = data['X_5D']
@@ -88,7 +105,20 @@ def create_plot_data(dfile, N_bins, X_min, X_max, Y_min, Y_max):
     )
     print(">>>Done.\n")
 
-    np.savez(dfile, mu5=mu5, mu6=mu6)
+    # load training set
+    print("99% spatial bounds:")
+    df = pd.read_hdf(get_datadir() + 'DR3_6D/train.hdf5')
+    d = np.mean(np.stack([df[f'd{i}'] for i in range(10)], axis=-1), axis=-1)
+    X, Y, Z = convert_pos(df['ra'].to_numpy(), df['dec'].to_numpy(), d).T
+    lon = np.arctan2(Y, X + D_GC)
+    lon[lon < 0] += 2 * np.pi
+    l_arr = np.linspace(0, 2 * np.pi, 360)
+    d99 = np.array([rolling_d99(d, lon, l_cen) for l_cen in l_arr])
+    X99 = d99 * np.cos(l_arr) - D_GC
+    Y99 = d99 * np.sin(l_arr)
+    print(">>>Done.\n")
+
+    np.savez(dfile, mu5=mu5, mu6=mu6, X99=X99, Y99=Y99)
     return
 
 
@@ -109,6 +139,8 @@ if __name__ == "__main__":
     data = np.load(dfile)
     mu5 = data['mu5']
     mu6 = data['mu6']
+    X99 = data['X99']
+    Y99 = data['Y99']
 
     # smooth data
     mu5 = gaussian_filter(data['mu5'], sigma=3)
@@ -121,7 +153,7 @@ if __name__ == "__main__":
     Y_cens = 0.5 * (Y_edges[1:] + Y_edges[:-1])
 
     # plot settings
-    extent = [X_max, X_min, Y_max, Y_min]
+    extent = [X_min, X_max, Y_min, Y_max]
     clist = ['teal', '#ffffff', 'goldenrod']
     cmap = LSCmap.from_list("", clist)
     imargs = dict(
@@ -147,12 +179,12 @@ if __name__ == "__main__":
     cax = fig.add_axes([X0, Y2, dX, cdY])
 
     # plot maps
-    im0 = ax0.imshow(np.flip(mu5).T, **imargs)
-    im1 = ax1.imshow(np.flip(mu6).T, **imargs)
+    im0 = ax0.imshow(mu5.T, **imargs)
+    im1 = ax1.imshow(mu6.T, **imargs)
 
     # contours
-    ax0.contour(X_cens, Y_cens, mu5.T, levels=[0], colors='k', linewidths=0.75)
-    ax1.contour(X_cens, Y_cens, mu6.T, levels=[0], colors='k', linewidths=0.75)
+    ax0.contour(X_cens, Y_cens, mu5.T, levels=[0], colors='k', linewidths=1)
+    ax1.contour(X_cens, Y_cens, mu6.T, levels=[0], colors='k', linewidths=1)
 
     # colourbar
     plt.colorbar(im0, cax=cax, orientation='horizontal')
@@ -160,6 +192,10 @@ if __name__ == "__main__":
     # solar position
     ax0.scatter([-8.122], [0], c='k', marker='x', s=20)
     ax1.scatter([-8.122], [0], c='k', marker='x', s=20)
+
+    # training set spatial bounds
+    ax0.plot(X99, Y99, c='k', ls='dotted')
+    ax1.plot(X99, Y99, c='k', ls='dotted')
 
     # aximuthal grid lines
     for R in np.arange(2, 20, 2):
@@ -179,8 +215,8 @@ if __name__ == "__main__":
 
     # axis limits
     for ax in [ax0, ax1]:
-        ax.set_xlim(X_max, X_min)
-        ax.set_ylim(Y_max, Y_min)
+        ax.set_xlim(X_min, X_max)
+        ax.set_ylim(Y_min, Y_max)
 
     # axis labels
     ax0.set_xlabel(r'$X\ [\mathrm{kpc}]$', usetex=True)
@@ -200,8 +236,13 @@ if __name__ == "__main__":
         ax = [ax0, ax1][i]
         lab = [r'Gaia 5D stars', 'Gaia 6D stars'][i]
         bbox = dict(facecolor='white', alpha=0.85, edgecolor='teal')
-        t = ax.text(0.95, 0.95, lab, transform=ax.transAxes,
-                    ha='right', va='top', bbox=bbox)
+        t = ax.text(0.05, 0.95, lab, transform=ax.transAxes,
+                    ha='left', va='top', bbox=bbox)
+    ax1.text(0.825, 0.15, r"$v_\mathrm{los} = 0$", transform=ax1.transAxes, usetex=True)
+    ax1.arrow(0.81, 0.16, -0.04, 0, width=0.004, transform=ax1.transAxes, fc='k', ec='none', alpha=0.8)
+    ax1.arrow(0.83, 0.185, -0.08, 0.32, width=0.004, transform=ax1.transAxes, fc='k', ec='none', alpha=0.8)
+    ax1.text(0.2, 0.725, "bounds\n99% of\ntraining set", transform=ax1.transAxes, ha='center')
+    ax1.arrow(0.225, 0.71, 0.09, -0.07, width=0.004, transform=ax1.transAxes, fc='k', ec='none', alpha=0.8)
 
     # save
     plt.savefig("fig8_median_vlos_map.pdf", dpi=800)
