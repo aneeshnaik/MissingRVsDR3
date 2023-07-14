@@ -2,11 +2,11 @@
 
 ## Summary
 
-This repository contains the code and the trained model used to generate the results in the article Naik & Widmark (2023; arXiv link to be added soon): "The missing radial velocities of \textit{Gaia}: a catalogue of Bayesian estimates for DR3."
+This repository contains the code and the trained model used to generate the results in the article Naik & Widmark (2023; arXiv link to be added soon): "The missing radial velocities of Gaia: a catalogue of Bayesian estimates for DR3."
 
 The code includes the data queries used to obtain the raw Gaia data, the scripts used to train the Bayesian neural network, the scripts to generate the catalogue, and the scripts used to generate the plots in the paper. 
 
-The Bayesian neural network source code is available as the package [banyan](https://github.com/aneeshnaik/banyan)
+The Bayesian neural network source code is available as the package [banyan](https://github.com/aneeshnaik/banyan).
 
 ## Citation
 
