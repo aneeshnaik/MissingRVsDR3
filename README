@@ -1,21 +1,26 @@
+# MissingRVsDR3
+
+## Summary
+
+This repository contains the code and the trained model used to generate the results in the article Naik & Widmark (2023; arXiv link to be added soon): "The missing radial velocities of \textit{Gaia}: a catalogue of Bayesian estimates for DR3."
+
+The code includes the data queries used to obtain the raw Gaia data, the scripts used to train the Bayesian neural network, the scripts to generate the catalogue, and the scripts used to generate the plots in the paper. 
+
+The Bayesian neural network source code is available as the package [banyan](https://github.com/aneeshnaik/banyan)
+
+## Citation
+
+Our code is freely available for use under the MIT License. For details, see LICENSE.
+
+If using our code, please cite our paper: arXiv link to be added soon.
 
 
-# DATA DIRECTORY
+## Structure
 
-## EDR3_predictions
-
-- EDR3_prediction_results.hdf5 (INPUT; produced in paper 1)
-- EDR3_prediction_results.npz and EDR3_prediction_aux.npz (produced by data/match_EDR3_predictions.py)
-
-## External
-
-- BJ_distances_prior.csv (INPUT; Bailer-Jones distance prior)
-
-## DR3_6D
-
-- DR3_6D.csv (INPUT; produced by query_DR3_6D.sql)
-- rybizki_flags.csv (INPUT; astrometric quality flags)
-- distance_samples (produced by sample_distances_6D.py)
-- test.hdf5 and train.hdf5 (produced by parse_6D.py)
-
-
+This code is structured as follows:
+- `/src` contains all of the 'source code', including utility functions (`utils.py`), coordinate conversions (`coords.py`), global constants (`constants.py`), run parameters (`params.py`), and various functions relating to the Gaussian mixture models (`gmm.py`).
+- `/EDR3_match` contains a script used to match stars contained in our previous EDR3-derived catalogue to stars with measured radial velocities in DR3.
+- `/data` contains a directory of data queries, as well as various scripts used to parse and manage the downloaded data.
+- `/models` contains the script used to train the BNN model, as well as the ensemble of trained BNNs itself (`*.pth`).
+- `/predictions` contains the scripts used to generate predictions from the trained BNN model, as well as scripts to fit the prediction distributions with Gaussian mixture models.
+- `/figures` contains the plotting scripts used for the paper.
