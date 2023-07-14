@@ -24,6 +24,7 @@ sys.path.append("..")
 from src.utils import get_datadir
 from src.coords import convert_pos
 from src.gmm import gmm_cdf_batch
+from src.constants import D_GC
 
 
 def calc_skymap(F, X, Y, Z, N_side, N_bins, N_phi, N_theta):
@@ -113,6 +114,26 @@ def get_FXYZ():
     return F, X, Y, Z
 
 
+def calc_99_bounds():
+    # load training set, calculate 99% distance bounds
+    print(">>>99% spatial bounds:")
+    df = pd.read_hdf(get_datadir() + 'DR3_6D/train.hdf5')
+    d = np.mean(np.stack([df[f'd{i}'] for i in range(10)], axis=-1), axis=-1)
+    X, Y, Z = convert_pos(df['ra'].to_numpy(), df['dec'].to_numpy(), d).T
+    lon = np.arctan2(Y, X + D_GC)
+    lon[lon < 0] += 2 * np.pi
+    N_bins = 32
+    l_edges = np.linspace(0, 2 * np.pi, N_bins + 1)
+    l_cens = 0.5 * (l_edges[1:] + l_edges[:-1])
+    inds = np.digitize(lon, l_edges) - 1
+    d99 = np.array([np.percentile(d[inds == i], q=(99)) for i in range(N_bins)])
+    l_cens = np.append(l_cens, l_cens[0])
+    d99 = np.append(d99, d99[0])
+    X99 = d99 * np.cos(l_cens) - D_GC
+    Y99 = d99 * np.sin(l_cens)
+    return X99, Y99
+
+
 def create_plot_data(dfile, N_side, N_bins, N_phi, N_theta, N_disc, d_max):
 
     # get test set positions and quantiles
@@ -120,6 +141,9 @@ def create_plot_data(dfile, N_side, N_bins, N_phi, N_theta, N_disc, d_max):
 
     # calculate sky map
     z_sky, phi, theta = calc_skymap(F, X, Y, Z, N_side, N_bins, N_phi, N_theta)
+
+    # calculate spatial bounds of training data
+    X99, Y99 = calc_99_bounds()
 
     # calculate disc map
     z_disc, n, x, y = calc_discmap(F, X, Y, N_bins, N_disc, d_max)
@@ -130,6 +154,7 @@ def create_plot_data(dfile, N_side, N_bins, N_phi, N_theta, N_disc, d_max):
         dfile,
         z_sky=z_sky, phi=phi, theta=theta,
         z_disc=z_disc, n=n, x=x, y=y,
+        X99=X99, Y99=Y99
     )
     return
 
@@ -157,6 +182,8 @@ if __name__ == "__main__":
     n = data['n']
     x = data['x']
     y = data['y']
+    X99 = data['X99']
+    Y99 = data['Y99']
 
     # plot settings
     vmax = 0.25
@@ -199,7 +226,10 @@ if __name__ == "__main__":
 
     # solar position
     ax0.scatter([-8.122], [0], c='k', marker='x', s=20)
-    
+
+    # training set spatial bounds
+    ax0.plot(X99, Y99, c='k', ls='dotted')
+
     # aximuthal grid lines
     gridargs = dict(c='k', ls='dotted', lw=0.5)
     for R in np.arange(2, 30, 2):
@@ -219,13 +249,18 @@ if __name__ == "__main__":
     ax0.set_xlim(-8.122 - d_max, -8.122 + d_max)
     ax0.set_ylim(-d_max, d_max)
     ax0.tick_params(right=True, top=True, direction='inout', labelbottom=False, labeltop=True)
-    ax1.tick_params(labelright=True, labelleft=False)
+    ax1.tick_params(labelright=True, labelleft=False, labelbottom=False)
     ax0.set_xlabel(r"$X$ [kpc]", usetex=True)
     ax0.set_ylabel(r"$Y$ [kpc]", usetex=True)
     ax0.xaxis.set_label_position('top')
-    ax1.grid()
-    ax1.set_xticklabels(ax1.get_xticklabels()[::-1])
+    ax1.grid(True)
+    #ax1.set_xticklabels([])
+    ax1.tick_params(axis='x', pad=30)
     cax.set_xlabel("Error rate")
+    ax0.text(0.15, 0.75, "bounds\n99% of\ntraining set", transform=ax0.transAxes, ha='center')
+    ax0.arrow(0.205, 0.73, 0.14, -0.12, width=0.007, transform=ax0.transAxes, fc='k', ec='none', alpha=0.8)
+    for th in np.arange(-150, 180, 30):
+        ax1.text(-th * np.pi/180, 0, rf'{th}$\degree$', fontsize=8, ha='center')
 
     # save figure
     fig.savefig("fig6_error_maps.pdf", dpi=800)

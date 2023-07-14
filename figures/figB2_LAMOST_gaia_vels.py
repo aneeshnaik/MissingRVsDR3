@@ -86,8 +86,8 @@ if __name__ == "__main__":
     v1 = data['v_lamost']
 
     # plot settings
-    c1 = 'teal'
-    c2 = 'goldenrod'
+    c2 = 'teal'
+    c1 = 'goldenrod'
 
     # create figure
     fig = plt.figure(figsize=(3.35, 3))

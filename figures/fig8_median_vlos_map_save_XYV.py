@@ -20,7 +20,7 @@ from src.coords import convert_pos
 from src.gmm import gmm_batchsample
 
 
-def data_cut(df, X_min, X_max, Y_min, Y_max, f_cut, sig_cut):
+def data_cut(df, X_min, X_max, Y_min, Y_max, f_cut, sig_cut=None):
 
     # get distances and errors
     d_matrix = np.stack([df[f'd{i}'] for i in range(10)], axis=-1)
@@ -34,13 +34,18 @@ def data_cut(df, X_min, X_max, Y_min, Y_max, f_cut, sig_cut):
     X, Y, Z = convert_pos(df['ra'], df['dec'], d).T
 
     # quality cut
-    m = ((f < f_cut) & (sig < sig_cut)
-         & (X > X_min) & (X < X_max)
-         & (Y > Y_min) & (Y < Y_max))
+    if sig_cut is None:
+        m = (f < f_cut) \
+            & (X > X_min) & (X < X_max) \
+            & (Y > Y_min) & (Y < Y_max)
+    else:
+        m = (f < f_cut) & (sig < sig_cut) \
+            & (X > X_min) & (X < X_max) \
+            & (Y > Y_min) & (Y < Y_max)
     return df[m]
 
 
-def get_XYV_6D(X_min, X_max, Y_min, Y_max, f_cut, sig_cut):
+def get_XYV_6D(X_min, X_max, Y_min, Y_max, f_cut):
 
     # load data, merge w/ GMM catalogue
     ddir = get_datadir()
@@ -50,7 +55,7 @@ def get_XYV_6D(X_min, X_max, Y_min, Y_max, f_cut, sig_cut):
     df = df.merge(pd.read_hdf(gmm_file), on='source_id')
 
     # quality cut
-    df = data_cut(df, X_min, X_max, Y_min, Y_max, f_cut, sig_cut)
+    df = data_cut(df, X_min, X_max, Y_min, Y_max, f_cut)
 
     # get distances and errors
     d_matrix = np.stack([df[f'd{i}'] for i in range(10)], axis=-1)
@@ -109,11 +114,11 @@ if __name__ == "__main__":
     Y_min = -9
     Y_max = 9
     f_cut = 0.25   # fractional distance error cut
-    sig_cut = 80  # posterior width cut
+    sig_cut = 80   # posterior width cut, only on 5D set
 
     # get 6D data
     print("Getting 6D data:", flush=True)
-    X_6D, Y_6D, V_6D = get_XYV_6D(X_min, X_max, Y_min, Y_max, f_cut, sig_cut)
+    X_6D, Y_6D, V_6D = get_XYV_6D(X_min, X_max, Y_min, Y_max, f_cut)
     print(">>>Done.\n", flush=True)
 
     # loop over 5D datasets
@@ -122,8 +127,6 @@ if __name__ == "__main__":
     V_5D = np.array([], dtype=np.float32)
     print("Getting 5D data:", flush=True)
     for i in trange(32):
-        if not exists(get_datadir() + f"DR3_5D/{i}.hdf5"):
-            continue
         X, Y, V = get_XYV_5D(i, X_min, X_max, Y_min, Y_max, f_cut, sig_cut)
         X_5D = np.append(X_5D, X)
         Y_5D = np.append(Y_5D, Y)

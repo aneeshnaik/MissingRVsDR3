@@ -21,7 +21,7 @@ from src.gmm import gmm_cdf_batch
 from src.coords import convert_pos
 
 
-def create_plot_data(dfile):
+def create_plot_data(dfile, N_bins):
 
     print("Creating plot data file:")
 
@@ -53,13 +53,13 @@ def create_plot_data(dfile):
 
     # nested loop over angle then distance bins; get bin counts
     print(">>>Calculating bin counts:")
-    N_bins = 100
     F_edges = np.linspace(0, 1, N_bins + 1)
-    dist_edges = np.array([0, 1, 2, 4, 1e+3])
+    dist_edges = np.array([0, 2, 4, 6, 1e+5])
     ang_edges = np.linspace(0., 2 * np.pi, 7)
     N_dist_bins = len(dist_edges) - 1
     N_ang_bins = len(ang_edges) - 1
-    counts = np.zeros((N_ang_bins, N_dist_bins, 100), dtype=int)
+    counts = np.zeros((N_ang_bins, N_dist_bins, N_bins), dtype=int)
+    N_stars = np.zeros((N_ang_bins, N_dist_bins), dtype=int)
     for i in range(N_ang_bins):
         for j in range(N_dist_bins):
             ang0 = ang_edges[i]
@@ -68,10 +68,11 @@ def create_plot_data(dfile):
             d1 = dist_edges[j + 1]
             m = (XY_d >= d0) & (XY_d < d1) & (XY_ang >= ang0) & (XY_ang < ang1)
             counts[i, j] = np.histogram(F[m], F_edges)[0]
+            N_stars[i, j] = m.sum()
 
     # save plot data
     print(">>>Saving")
-    np.save(dfile, counts)
+    np.savez(dfile, counts=counts, N_stars=N_stars)
     print(">>>Done.\n")
 
     return
@@ -79,13 +80,11 @@ def create_plot_data(dfile):
 
 def add_inset(fig, X, Y, dX, dY, aspect, th_min, th_max, r_min, r_max):
 
-    dXc = 0.3 * dX
+    dXc = 0.4 * dX
     dYc = aspect * dXc
     Xc = X + 0.75 * dX - 0.5 * dXc
     Yc = Y + 0.25 * dY - 0.5 * dYc
     axc = fig.add_axes([Xc, Yc, dXc, dXc], projection='polar')
-    axc.set_theta_offset(np.pi)
-    axc.set_theta_direction(-1)
 
     axc.tick_params(labelleft=False, labelbottom=False)
     axc.patch.set_alpha(0)
@@ -95,9 +94,9 @@ def add_inset(fig, X, Y, dX, dY, aspect, th_min, th_max, r_min, r_max):
     r2 = np.linspace(r_max, r_max, 200)
     axc.fill_between(th, r1, r2, color=c2)
 
-    axc.set_ylim(0, 5)
+    axc.set_ylim(0, 7)
     axc.set_thetagrids(np.arange(0, 360, 60))
-    axc.set_rgrids([1, 2, 4])
+    axc.set_rgrids([2, 4, 6])
     axc.patch.set_alpha(0.0)
     axc.spines['polar'].set_visible(False)
     axc.grid(linewidth=0.75, color='k', alpha=0.5)
@@ -107,12 +106,17 @@ def add_inset(fig, X, Y, dX, dY, aspect, th_min, th_max, r_min, r_max):
 
 if __name__ == "__main__":
 
+    # plot params
+    N_bins = 60
+
     # load plot data
     ddir = get_datadir()
-    dfile = ddir + 'figures/figA1_6D_quantiles_spatial_split_data.npy'
+    dfile = ddir + 'figures/figA1_6D_quantiles_spatial_split_data.npz'
     if not exists(dfile):
-        create_plot_data(dfile)
-    counts = np.load(dfile)
+        create_plot_data(dfile, N_bins)
+    data = np.load(dfile)
+    counts = data['counts']
+    N_stars = data['N_stars']
 
     # plot settings
     c1 = 'teal'
@@ -121,8 +125,8 @@ if __name__ == "__main__":
     # make figure
     N_rows = 7
     N_cols = 5
-    left = 0.05
-    right = 0.87
+    left = 0.14
+    right = 0.99
     top = 0.92
     bottom = 0.05
     dX = (right - left) / N_cols
@@ -143,40 +147,44 @@ if __name__ == "__main__":
             # add inset axes
             th_min = [0, 60, 120, 180, 240, 300, 0][row] * np.pi / 180
             th_max = [60, 120, 180, 240, 300, 360, 360][row] * np.pi / 180
-            r_min = [0, 0, 1, 2, 4][col]
-            r_max = [5, 1, 2, 4, 5][col]
+            r_min = [0, 2, 4, 6, 0][col]
+            r_max = [2, 4, 6, 7, 7][col]
             axc = add_inset(fig, X, Y, dX, dY, aspect, th_min, th_max, r_min, r_max)
 
             # plot
-            x = np.linspace(0.005, 0.995, 100)
-            if (row == N_rows - 1) and (col == 0):
+            edges = np.linspace(0, 1, N_bins + 1)
+            x = 0.5 * (edges[1:] + edges[:-1])
+            if (row == N_rows - 1) and (col == N_cols - 1):
                 y = counts.sum(axis=0).sum(axis=0)
+                N = N_stars.sum()
             elif (row == N_rows - 1):
-                y = counts.sum(axis=0)[col - 1]
-            elif (col == 0):
+                y = counts.sum(axis=0)[col]
+                N = N_stars.sum(axis=0)[col]
+            elif (col == N_cols - 1):
                 y = counts.sum(axis=1)[row]
+                N = N_stars.sum(axis=1)[row]
             else:
-                y = counts[row, col - 1]
-            N = y.sum()
-            y = 100 * (y / N)
-            a = 1 - 0.3 * (row < N_rows - 1) * (col > 0)
-            ax.bar(x, y, width=0.01, alpha=a, color=c1, rasterized=True)
+                y = counts[row, col]
+                N = N_stars[row, col]
+            y = N_bins * (y / N)
+            a = 1 - 0.3 * (row < N_rows - 1) - 0.3 * (col < N_cols - 1)
+            ax.bar(x, y, width=1 / N_bins, alpha=a, color=c1, rasterized=True)
 
             # row/col headings
             if row == 0:
                 srow = [
+                    r'$d_{XY} \in [0,2]$',
+                    r'$d_{XY} \in [2,4]$',
+                    r'$d_{XY} \in [4,6]$',
+                    r'$d_{XY} \in [6,\infty]$',
                     r'All distances',
-                    r'$\sqrt{X^2+Y^2}<1$',
-                    r'$1 \leq\sqrt{X^2+Y^2}< 2$',
-                    r'$2 \leq\sqrt{X^2+Y^2} < 4 $',
-                    r'$4 \leq \sqrt{X^2+Y^2}$',
                 ][col]
-                if col == 0:
-                    usetex = False
+                if col == N_cols - 1:
+                    tex = False
                 else:
-                    usetex = True
-                ax.text(0.5, 1.45, srow, ha='center', va='bottom', usetex=usetex)
-            if col == N_cols - 1:
+                    tex = True
+                ax.text(0.5, 1.45, srow, ha='center', va='bottom', usetex=tex)
+            if col == 0:
                 scol = [
                     r'$l \in [0^\circ, 60^\circ]$',
                     r'$l \in [60^\circ, 120^\circ]$',
@@ -187,10 +195,10 @@ if __name__ == "__main__":
                     r'All $l$'
                 ][row]
                 if row == 6:
-                    usetex = False
+                    tex = False
                 else:
-                    usetex = True
-                ax.text(1.05, 0.5, scol, ha='left', va='center', usetex=usetex)
+                    tex = True
+                ax.text(-0.05, 0.5, scol, ha='right', va='center', usetex=tex)
 
             # count label
             label = f"{N} stars"
@@ -214,8 +222,6 @@ if __name__ == "__main__":
             ax.set_ylim([0, 1.4])
     
             # axis labels
-            if row == 3 and col == 0:
-                ax.set_ylabel("Frequency Density [arbitrary units]")
             if row == 6 and col == 2:
                 t = r'$F(v_\mathrm{true}|\mathrm{model})' \
                     r'= \int_{-\infty}^{v_\mathrm{true}}\mathrm{posterior}(v)dv$'

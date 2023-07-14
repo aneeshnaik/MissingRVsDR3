@@ -65,20 +65,6 @@ def calc_vlos_map(X, Y, V, N_bins, X_min, X_max, Y_min, Y_max):
     return mu
 
 
-def rolling_d99(d, lon, l_cen, width=np.pi / 6):
-    l_min = l_cen - width / 2
-    l_max = l_cen + width / 2
-    if l_min < 0:
-        m = (lon < l_max) | (lon >= l_min + 2 * np.pi)
-    elif l_max > 2 * np.pi:
-        m = (lon < l_max - 2 * np.pi) | (lon >= l_min)
-    elif (l_min >= 0) and (l_max <= 2 * np.pi):
-        m = (lon >= l_min) & (lon < l_max)
-    else:
-        assert False, f"Couldn't understand lmin={l_min}, lmax={l_max}"
-    return np.percentile(d[m], q=(99))
-
-
 def create_plot_data(dfile, N_bins, X_min, X_max, Y_min, Y_max):
 
     # load XYV data
@@ -105,17 +91,22 @@ def create_plot_data(dfile, N_bins, X_min, X_max, Y_min, Y_max):
     )
     print(">>>Done.\n")
 
-    # load training set
+    # load training set, calculate 99% distance bounds
     print("99% spatial bounds:")
     df = pd.read_hdf(get_datadir() + 'DR3_6D/train.hdf5')
     d = np.mean(np.stack([df[f'd{i}'] for i in range(10)], axis=-1), axis=-1)
     X, Y, Z = convert_pos(df['ra'].to_numpy(), df['dec'].to_numpy(), d).T
     lon = np.arctan2(Y, X + D_GC)
     lon[lon < 0] += 2 * np.pi
-    l_arr = np.linspace(0, 2 * np.pi, 360)
-    d99 = np.array([rolling_d99(d, lon, l_cen) for l_cen in l_arr])
-    X99 = d99 * np.cos(l_arr) - D_GC
-    Y99 = d99 * np.sin(l_arr)
+    N_bins = 32
+    l_edges = np.linspace(0, 2 * np.pi, N_bins + 1)
+    l_cens = 0.5 * (l_edges[1:] + l_edges[:-1])
+    inds = np.digitize(lon, l_edges) - 1
+    d99 = np.array([np.percentile(d[inds == i], q=(99)) for i in range(N_bins)])
+    l_cens = np.append(l_cens, l_cens[0])
+    d99 = np.append(d99, d99[0])
+    X99 = d99 * np.cos(l_cens) - D_GC
+    Y99 = d99 * np.sin(l_cens)
     print(">>>Done.\n")
 
     np.savez(dfile, mu5=mu5, mu6=mu6, X99=X99, Y99=Y99)
@@ -239,7 +230,7 @@ if __name__ == "__main__":
         t = ax.text(0.05, 0.95, lab, transform=ax.transAxes,
                     ha='left', va='top', bbox=bbox)
     ax1.text(0.825, 0.15, r"$v_\mathrm{los} = 0$", transform=ax1.transAxes, usetex=True)
-    ax1.arrow(0.81, 0.16, -0.04, 0, width=0.004, transform=ax1.transAxes, fc='k', ec='none', alpha=0.8)
+    ax1.arrow(0.81, 0.16, -0.03, 0, width=0.004, transform=ax1.transAxes, fc='k', ec='none', alpha=0.8)
     ax1.arrow(0.83, 0.185, -0.08, 0.32, width=0.004, transform=ax1.transAxes, fc='k', ec='none', alpha=0.8)
     ax1.text(0.2, 0.725, "bounds\n99% of\ntraining set", transform=ax1.transAxes, ha='center')
     ax1.arrow(0.225, 0.71, 0.09, -0.07, width=0.004, transform=ax1.transAxes, fc='k', ec='none', alpha=0.8)

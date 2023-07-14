@@ -138,7 +138,7 @@ if __name__ == "__main__":
     lab2 = 'Median pred.\nuncertainty\n' + f'{med:.1f} km/s'
     ax2.text(0.81, 0.85, lab1, **targs)
     ax2.text(0.77, 0.25, lab2, **targs)
-    ax2.arrow(0.65, 0.85, -0.10, 0, fc='goldenrod', **arrargs)
+    ax2.arrow(0.65, 0.85, -0.10, 0, fc='k', **arrargs)
     ax2.arrow(0.59, 0.25, -0.22, 0, fc='k', **arrargs)
 
     # axis limits
