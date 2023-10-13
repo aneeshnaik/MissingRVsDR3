@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 plt.style.use('figstyle.mplstyle')
 from matplotlib.colors import LinearSegmentedColormap as LSCmap
 from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 
 sys.path.append("..")
 from src.utils import get_datadir
@@ -55,13 +56,19 @@ def get_v_data(N):
     v_pred = v_pred[m]
     v_pred = v_pred[np.where(ids == df['source_id'].to_numpy()[:, None])[1]]
     v_true = df['radial_velocity'].to_numpy()
+
     return v_true, v_pred
 
 
-def create_plot_data(dfile, N_plot):
+def create_plot_data(dfile, N_plot, v_lim):
 
     # download data (random subset)
     v_true, v_pred = get_v_data(N_plot)
+
+    # recentre
+    mu = np.mean(v_pred, axis=-1)
+    v_true = v_true
+    v_pred = v_pred
 
     # get kernel width
     print(">>>Computing kernel width")
@@ -71,7 +78,7 @@ def create_plot_data(dfile, N_plot):
     # v bins
     print(">>>Setting up v bins")
     N_bins = 100
-    x = np.linspace(-120, 120, N_bins)
+    x = np.linspace(-v_lim, v_lim, N_bins)
 
     # loop over stars
     print(">>>Looping over stars")
@@ -85,33 +92,31 @@ def create_plot_data(dfile, N_plot):
         # sum over samples for PDFs
         pdfs[i] = np.sum(sech2, axis=-1) / N_samples
 
-    # sort by v_true
-    print(">>>Sorting")
-    inds = np.argsort(v_true)
-    trues = v_true[inds]
+    inds = np.argsort(mu)
+    v_true = v_true[inds]
     pdfs = pdfs[inds]
 
     # save
     print(">>>Saving")
-    np.savez(dfile, trues=trues, pdfs=pdfs)
+    np.savez(dfile, v_true=v_true, pdfs=pdfs)
     return
 
 
 if __name__ == "__main__":
 
     # plot params
-    N_plot = 100000
+    N_plot = 10000
+    v_lim = 200
 
     # load plot data (create if not present)
     ddir = get_datadir()
     dfile = ddir + "figures/fig1_EDR3_posteriors_data.npz"
     if not exists(dfile):
-        create_plot_data(dfile, N_plot)
+        create_plot_data(dfile, N_plot, v_lim)
     data = np.load(dfile)
-    trues = data['trues']
+    v_true = data['v_true']
     pdfs = data['pdfs']
-    N_plot = len(trues)
-
+    
     # plot settings
     c1 = 'teal'
     c2 = 'goldenrod'
@@ -138,8 +143,8 @@ if __name__ == "__main__":
 
     # plot
     label = r'Measured radial velocity'
-    extent = [-120, 120, 0.5, N_plot + 0.5]
-    line = ax.plot(trues, np.arange(N_plot) + 1, c=c2, lw=2, label=label)[0]
+    extent = [-v_lim, v_lim, 0.5, N_plot + 0.5]
+    pt = ax.scatter(v_true, np.arange(N_plot) + 1, fc=c2, ec='none', s=1.4, alpha=0.6, label=label, rasterized=True)
     vmax = 0.025
     im = ax.imshow(
         pdfs / vmax, interpolation='none', cmap=cmap, vmax=1,
@@ -148,13 +153,19 @@ if __name__ == "__main__":
 
     # labels ticks etc.
     ax.grid(True, c='k', ls='dotted')
-    ax.set_xlabel(r"Radial velocity [km/s]")
+    ax.set_xlabel(r"Radial Velocity [km/s]")
     ax.set_ylabel(r"Star #")
     cax.set_ylabel("Frequency Density [arbitrary units]")
-    handles = [line, Patch(color=c1, label="Predictions")]
-    ax.legend(handles=handles, facecolor='w', edgecolor='k')
     ax.tick_params(top=True, right=True, direction='inout')
+
+    # legend
+    obs_handle = Line2D([], [], color=c2, marker='o', linestyle='None', markersize=6, label=r'Measured radial velocity')
+    pred_handle = Patch(color=c1, label="Predictions")
+    handles = [obs_handle, pred_handle]
+    ax.legend(handles=handles, facecolor='w', edgecolor='k')
+
+    # fig title
     fig.suptitle("Pre-DR3 predictions: predictive distributions compared with DR3 measurements")
 
     # save
-    fig.savefig("fig1_EDR3_posteriors.pdf", dpi=800)
+    fig.savefig("fig1_EDR3_posteriors.pdf", dpi=400)
