@@ -144,7 +144,7 @@ if __name__ == "__main__":
     # plot
     label = r'Measured radial velocity'
     extent = [-v_lim, v_lim, 0.5, N_plot + 0.5]
-    pt = ax.scatter(v_true, np.arange(N_plot) + 1, fc=c2, ec='none', s=1.4, alpha=0.6, label=label, rasterized=True)
+    pt = ax.scatter(v_true, np.arange(N_plot) + 1, fc=c2, ec='none', s=1.6, alpha=0.9, label=label, rasterized=True)
     vmax = 0.025
     im = ax.imshow(
         pdfs / vmax, interpolation='none', cmap=cmap, vmax=1,
