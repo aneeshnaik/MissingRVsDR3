@@ -114,9 +114,9 @@ if __name__ == "__main__":
     ax = fig.add_axes([X0, Y0, dX, dY])
 
     # plot
-    ax.scatter(v_true, np.arange(N_plot) + 1, fc=c2, ec='none', s=1.6, alpha=0.9, rasterized=True)
-    ax.plot(mu_pred, np.arange(N_plot) + 1, c=c1)
-    ax.fill_betweenx(np.arange(N_plot) + 1, mu_pred - sig_pred, mu_pred + sig_pred, fc=c1, alpha=0.3)
+    ax.plot(mu_pred, np.arange(N_plot) + 1, c='k')
+    ax.fill_betweenx(np.arange(N_plot) + 1, mu_pred - sig_pred, mu_pred + sig_pred, fc=c2, alpha=0.7)
+    ax.scatter(v_true, np.arange(N_plot) + 1, fc=c1, ec='none', s=1.6, alpha=0.9, rasterized=True)
 
     # labels ticks etc.
     ax.grid(True, c='k', ls='dotted')
@@ -127,9 +127,9 @@ if __name__ == "__main__":
     ax.set_ylim(1, N_plot + 1)
 
     # legend
-    obs_handle = Line2D([], [], color=c2, marker='o', linestyle='None', markersize=6, label=r'Measured radial velocity')
-    mu_handle = Line2D([], [], color=c1, label=r'Predictions: mean')
-    sig_handle = Patch(color=c1, alpha=0.3, label=r"Predictions: $1\sigma$ region")
+    obs_handle = Line2D([], [], color=c1, marker='o', linestyle='None', markersize=6, label=r'Measured radial velocity')
+    mu_handle = Line2D([], [], color='k', label=r'Predictions: mean')
+    sig_handle = Patch(color=c2, alpha=0.9, label=r"Predictions: 1$\sigma$ region")
     handles = [obs_handle, mu_handle, sig_handle]
     ax.legend(handles=handles, facecolor='w', edgecolor='k')
 
