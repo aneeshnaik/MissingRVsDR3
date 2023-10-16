@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     # load plot data (create if not present)
     ddir = get_datadir()
-    dfile = ddir + "figures/fig1_EDR3_posteriors_REATTEMPT_3_data.npz"
+    dfile = ddir + "figures/fig1_EDR3_posteriors_data.npz"
     if not exists(dfile):
         create_plot_data(dfile, N_plot)
     data = np.load(dfile)
