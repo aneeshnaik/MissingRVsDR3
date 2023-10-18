@@ -87,7 +87,7 @@ def create_plot_data(dfile, N_plot):
 if __name__ == "__main__":
 
     # plot params
-    N_plot = 10000
+    N_plot = 5000
 
     # load plot data (create if not present)
     ddir = get_datadir()
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     # plot
     ax.plot(mu_pred, np.arange(N_plot) + 1, c='k')
     ax.fill_betweenx(np.arange(N_plot) + 1, mu_pred - sig_pred, mu_pred + sig_pred, fc=c2, alpha=0.7)
-    ax.scatter(v_true, np.arange(N_plot) + 1, fc=c1, ec='none', s=1.6, alpha=0.9, rasterized=True)
+    ax.scatter(v_true, np.arange(N_plot) + 1, fc=c1, ec='none', s=4, alpha=0.9, rasterized=True)
 
     # labels ticks etc.
     ax.grid(True, c='k', ls='dotted')
